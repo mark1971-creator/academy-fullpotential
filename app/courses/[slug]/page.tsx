@@ -1,42 +1,22 @@
-import { auth } from "@clerk/nextjs/server";
-import { notFound } from "next/navigation";
-
-import { CourseHero } from "@/components/course/CourseHero";
-import { CoursePlayer } from "@/components/course/CoursePlayer";
-import { PageShell } from "@/components/ui/brand-elements";
-import { getCourseWithCurriculumBySlug } from "@/lib/actions/courses";
-import {
-  getCourseItemProgress,
-  isUserEnrolledInCourse,
-} from "@/lib/actions/enrollments";
-import { getHeroVideoUrl } from "@/lib/courses/utils";
-
-type CourseDetailPageProps = {
-  params: Promise<{ slug: string }>;
-};
-
-export async function generateMetadata({ params }: CourseDetailPageProps) {
-  const { slug } = await params;
-  const course = await getCourseWithCurriculumBySlug(slug);
-
-  if (!course) {
-    return { title: "Program not found" };
-  }
-
-  return {
-    title: course.title,
-    description: course.description ?? `Explore ${course.title} at Full Potential Academy.`,
-  };
-}
-
 export default async function CourseDetailPage({ params }: CourseDetailPageProps) {
   const { slug } = await params;
-  const course = await getCourseWithCurriculumBySlug(slug);
+  console.log("📄 CourseDetailPage rendered for slug:", slug);
+
+  let course;
+  try {
+    course = await getCourseWithCurriculumBySlug(slug);
+    console.log("✅ Course loaded:", course ? "Yes" : "No", course?.title);
+  } catch (err: any) {
+    console.error("🔴 Error in getCourseWithCurriculumBySlug:", err);
+    course = null;
+  }
 
   if (!course) {
+    console.warn("❌ No course data - showing notFound");
     notFound();
   }
 
+  // ... rest of the function stays the same
   const { userId } = await auth();
   const [isEnrolled, progress] = await Promise.all([
     isUserEnrolledInCourse(course.id),
