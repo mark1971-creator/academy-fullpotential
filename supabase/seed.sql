@@ -2,28 +2,12 @@
 -- Full Potential Academy — Seed Data
 -- Human Potential Coach Certification Training (HPCC)
 -- =============================================================================
--- Prerequisites: all migrations through 20250614000000_course_metadata_and_lesson_types
--- Re-running: upserts the course row and replaces curriculum (modules cascade-delete).
 
--- -----------------------------------------------------------------------------
 -- 1. COURSE
--- -----------------------------------------------------------------------------
-
 insert into public.courses (
-  title,
-  description,
-  slug,
-  image_url,
-  price,
-  is_published,
-  hero_video_url,
-  duration_label,
-  level,
-  rating,
-  rating_count,
-  enrolled_count,
-  what_you_will_learn,
-  tags
+  title, description, slug, image_url, price, is_published, 
+  hero_video_url, duration_label, level, rating, rating_count, 
+  enrolled_count, what_you_will_learn, tags
 )
 values (
   'Certification – Human Potential Development Coach Training',
@@ -63,16 +47,13 @@ on conflict (slug) do update set
   tags = excluded.tags,
   updated_at = now();
 
--- Replace curriculum on each seed run
+-- Clear existing curriculum
 delete from public.modules
-where course_id = (
-  select id from public.courses where slug = 'human-potential-coach-certification'
-);
+where course_id = (select id from public.courses where slug = 'human-potential-coach-certification');
 
--- -----------------------------------------------------------------------------
--- 2. MODULES (11 modules)
--- -----------------------------------------------------------------------------
-
+-- =============================================================================
+-- 2. MODULES
+-- =============================================================================
 insert into public.modules (course_id, title, sort_order)
 select c.id, v.title, v.sort_order
 from public.courses c
@@ -92,12 +73,13 @@ cross join (
 ) as v(sort_order, title)
 where c.slug = 'human-potential-coach-certification';
 
--- -----------------------------------------------------------------------------
--- 3. LESSONS — Module 1
--- -----------------------------------------------------------------------------
+-- =============================================================================
+-- 3. LESSONS
+-- =============================================================================
 
+-- Module 1
 insert into public.lessons (module_id, title, youtube_url, lesson_type, duration_label, duration_minutes, sort_order)
-select m.id, v.title, v.youtube_url, v.lesson_type, v.duration_label, v.duration_minutes, v.sort_order
+select m.id, v.title, v.youtube_url, v.lesson_type, v.duration_label, v.duration_minutes::integer, v.sort_order
 from public.modules m
 join public.courses c on c.id = m.course_id
 cross join (
@@ -108,7 +90,7 @@ where c.slug = 'human-potential-coach-certification' and m.sort_order = 1;
 
 -- Module 2
 insert into public.lessons (module_id, title, youtube_url, lesson_type, duration_label, duration_minutes, sort_order)
-select m.id, v.title, v.youtube_url, v.lesson_type, v.duration_label, v.duration_minutes, v.sort_order
+select m.id, v.title, v.youtube_url, v.lesson_type, v.duration_label, v.duration_minutes::integer, v.sort_order
 from public.modules m
 join public.courses c on c.id = m.course_id
 cross join (
@@ -121,19 +103,19 @@ where c.slug = 'human-potential-coach-certification' and m.sort_order = 2;
 
 -- Module 3
 insert into public.lessons (module_id, title, youtube_url, lesson_type, duration_label, duration_minutes, sort_order)
-select m.id, v.title, v.youtube_url, v.lesson_type, v.duration_label, v.duration_minutes, v.sort_order
+select m.id, v.title, v.youtube_url, v.lesson_type, v.duration_label, v.duration_minutes::integer, v.sort_order
 from public.modules m
 join public.courses c on c.id = m.course_id
 cross join (
   values
-    ('Introduction to the Human Potential Iceberg',                          'https://youtu.be/GGPuqlP83LA', 'video', '24:01', 25, 1),
+    ('Introduction to the Human Potential Iceberg', 'https://youtu.be/GGPuqlP83LA', 'video', '24:01', 25, 1),
     ('Deep dive into the 6 Organizational Performance Metrics (OPM''s)', 'https://youtu.be/0ihlThTOa0U', 'video', '22:45', 23, 2)
 ) as v(title, youtube_url, lesson_type, duration_label, duration_minutes, sort_order)
 where c.slug = 'human-potential-coach-certification' and m.sort_order = 3;
 
 -- Module 4
 insert into public.lessons (module_id, title, youtube_url, lesson_type, duration_label, duration_minutes, sort_order)
-select m.id, v.title, v.youtube_url, v.lesson_type, v.duration_label, v.duration_minutes, v.sort_order
+select m.id, v.title, v.youtube_url, v.lesson_type, v.duration_label, v.duration_minutes::integer, v.sort_order
 from public.modules m
 join public.courses c on c.id = m.course_id
 cross join (
@@ -145,31 +127,31 @@ where c.slug = 'human-potential-coach-certification' and m.sort_order = 4;
 
 -- Module 5
 insert into public.lessons (module_id, title, youtube_url, lesson_type, duration_label, duration_minutes, sort_order)
-select m.id, v.title, v.youtube_url, v.lesson_type, v.duration_label, v.duration_minutes, sort_order
+select m.id, v.title, v.youtube_url, v.lesson_type, v.duration_label, v.duration_minutes::integer, v.sort_order
 from public.modules m
 join public.courses c on c.id = m.course_id
 cross join (
   values
-    ('The origins of the Human Potential House',  'https://youtu.be/e1WQoNM6dmU', 'video', '21:50', 22, 1),
-    ('Working with the Human Potential House',    'https://youtu.be/rEqJdrsEPew', 'video', '22:28', 23, 2)
+    ('The origins of the Human Potential House', 'https://youtu.be/e1WQoNM6dmU', 'video', '21:50', 22, 1),
+    ('Working with the Human Potential House',   'https://youtu.be/rEqJdrsEPew', 'video', '22:28', 23, 2)
 ) as v(title, youtube_url, lesson_type, duration_label, duration_minutes, sort_order)
 where c.slug = 'human-potential-coach-certification' and m.sort_order = 5;
 
 -- Module 6
 insert into public.lessons (module_id, title, youtube_url, lesson_type, duration_label, duration_minutes, sort_order)
-select m.id, v.title, v.youtube_url, v.lesson_type, v.duration_label, v.duration_minutes, v.sort_order
+select m.id, v.title, v.youtube_url, v.lesson_type, v.duration_label, v.duration_minutes::integer, v.sort_order
 from public.modules m
 join public.courses c on c.id = m.course_id
 cross join (
   values
     ('Debriefing the Human Potential House Role Play', 'https://youtu.be/cX3M-PDKhtw', 'video', null, null, 1),
-    ('Deep dive into the 4 States & 23 Dimensions',  'https://youtu.be/aowvAT8brYg', 'video', null, null, 2)
+    ('Deep dive into the 4 States & 23 Dimensions',    'https://youtu.be/aowvAT8brYg', 'video', null, null, 2)
 ) as v(title, youtube_url, lesson_type, duration_label, duration_minutes, sort_order)
 where c.slug = 'human-potential-coach-certification' and m.sort_order = 6;
 
 -- Module 7
 insert into public.lessons (module_id, title, youtube_url, lesson_type, duration_label, duration_minutes, sort_order)
-select m.id, v.title, v.youtube_url, v.lesson_type, v.duration_label, v.duration_minutes, v.sort_order
+select m.id, v.title, v.youtube_url, v.lesson_type, v.duration_label, v.duration_minutes::integer, v.sort_order
 from public.modules m
 join public.courses c on c.id = m.course_id
 cross join (
@@ -180,20 +162,20 @@ where c.slug = 'human-potential-coach-certification' and m.sort_order = 7;
 
 -- Module 8
 insert into public.lessons (module_id, title, youtube_url, lesson_type, duration_label, duration_minutes, sort_order)
-select m.id, v.title, v.youtube_url, v.lesson_type, v.duration_label, v.duration_minutes, v.sort_order
+select m.id, v.title, v.youtube_url, v.lesson_type, v.duration_label, v.duration_minutes::integer, v.sort_order
 from public.modules m
 join public.courses c on c.id = m.course_id
 cross join (
   values
-    ('Understanding the 5 levels of maturity and consciousness',           'https://youtu.be/yWjAr7TAdDk', 'video', '24:44', 25, 1),
-    ('Applying of maturity consciousness model',                           'https://youtu.be/gnttLZKH2D0', 'video', '25:03', 26, 2),
+    ('Understanding the 5 levels of maturity and consciousness',            'https://youtu.be/yWjAr7TAdDk', 'video', '24:44', 25, 1),
+    ('Applying of maturity consciousness model',                            'https://youtu.be/gnttLZKH2D0', 'video', '25:03', 26, 2),
     ('Using the Maturity framework to connect with our clients - role play','https://youtu.be/PiTnDjl89K4', 'video', '22:57', 23, 3)
 ) as v(title, youtube_url, lesson_type, duration_label, duration_minutes, sort_order)
 where c.slug = 'human-potential-coach-certification' and m.sort_order = 8;
 
 -- Module 9
 insert into public.lessons (module_id, title, youtube_url, lesson_type, duration_label, duration_minutes, sort_order)
-select m.id, v.title, v.youtube_url, v.lesson_type, v.duration_label, v.duration_minutes, v.sort_order
+select m.id, v.title, v.youtube_url, v.lesson_type, v.duration_label, v.duration_minutes::integer, v.sort_order
 from public.modules m
 join public.courses c on c.id = m.course_id
 cross join (
@@ -204,27 +186,27 @@ where c.slug = 'human-potential-coach-certification' and m.sort_order = 9;
 
 -- Module 10
 insert into public.lessons (module_id, title, youtube_url, lesson_type, duration_label, duration_minutes, sort_order)
-select m.id, v.title, v.youtube_url, v.lesson_type, v.duration_label, v.duration_minutes, v.sort_order
+select m.id, v.title, v.youtube_url, v.lesson_type, v.duration_label, v.duration_minutes::integer, v.sort_order
 from public.modules m
 join public.courses c on c.id = m.course_id
 cross join (
   values
-    ('Part 1: Bringing it all to life with full assessment debrief',              'https://youtu.be/2h7QYESAzPE', 'video', '35:37', 36, 1),
-    ('Part 2: Lessons and best practices from full HP assessment debrief',        'https://youtu.be/mJ9Ao4mBPEM', 'video', '15:05', 16, 2)
+    ('Part 1: Bringing it all to life with full assessment debrief',       'https://youtu.be/2h7QYESAzPE', 'video', '35:37', 36, 1),
+    ('Part 2: Lessons and best practices from full HP assessment debrief', 'https://youtu.be/mJ9Ao4mBPEM', 'video', '15:05', 16, 2)
 ) as v(title, youtube_url, lesson_type, duration_label, duration_minutes, sort_order)
 where c.slug = 'human-potential-coach-certification' and m.sort_order = 10;
 
 -- Module 11
 insert into public.lessons (module_id, title, youtube_url, lesson_type, duration_label, duration_minutes, content, sort_order)
-select m.id, v.title, v.youtube_url, v.lesson_type, v.duration_label, v.duration_minutes, v.content, v.sort_order
+select m.id, v.title, v.youtube_url, v.lesson_type, v.duration_label, v.duration_minutes::integer, v.content, v.sort_order
 from public.modules m
 join public.courses c on c.id = m.course_id
 cross join (
   values
-    ('Part 1: Synchronizing individual and collective purpose',        'https://youtu.be/PsADDe5JE9s', 'video',    '19:20', 20, null, 1),
-    ('Part 2: Being at Full Potential vision, mission and standards',  'https://youtu.be/NsS3h8nR0E4', 'video',    '19:59', 20, null, 2),
-    ('Part 3: Next steps',                                             'https://youtu.be/yfMvAQQjRpM', 'video',    '19:15', 20, null, 3),
-    ('Resources & feedback form',                                      null,                           'resource', null,    null, 'Access program resources and submit your training feedback.', 4),
-    ('Certification check list',                                         null,                           'resource', null,    null, 'Review the certification checklist to confirm you have met all program requirements.', 5)
+    ('Part 1: Synchronizing individual and collective purpose',       'https://youtu.be/PsADDe5JE9s', 'video',    '19:20', 20, null, 1),
+    ('Part 2: Being at Full Potential vision, mission and standards', 'https://youtu.be/NsS3h8nR0E4', 'video',    '19:59', 20, null, 2),
+    ('Part 3: Next steps',                                            'https://youtu.be/yfMvAQQjRpM', 'video',    '19:15', 20, null, 3),
+    ('Resources & feedback form',                                     null,                           'resource', null,    null, 'Access program resources and submit your training feedback.', 4),
+    ('Certification check list',                                      null,                           'resource', null,    null, 'Review the certification checklist to confirm you have met all program requirements.', 5)
 ) as v(title, youtube_url, lesson_type, duration_label, duration_minutes, content, sort_order)
 where c.slug = 'human-potential-coach-certification' and m.sort_order = 11;
