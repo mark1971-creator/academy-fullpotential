@@ -40,6 +40,14 @@ export type Database = {
           description: string | null;
           slug: string;
           image_url: string | null;
+          hero_video_url: string | null;
+          duration_label: string | null;
+          level: string | null;
+          rating: number | null;
+          rating_count: number;
+          enrolled_count: number;
+          what_you_will_learn: Json;
+          tags: Json;
           price: number;
           is_published: boolean;
           created_at: string;
@@ -51,6 +59,14 @@ export type Database = {
           description?: string | null;
           slug: string;
           image_url?: string | null;
+          hero_video_url?: string | null;
+          duration_label?: string | null;
+          level?: string | null;
+          rating?: number | null;
+          rating_count?: number;
+          enrolled_count?: number;
+          what_you_will_learn?: Json;
+          tags?: Json;
           price?: number;
           is_published?: boolean;
           created_at?: string;
@@ -62,6 +78,14 @@ export type Database = {
           description?: string | null;
           slug?: string;
           image_url?: string | null;
+          hero_video_url?: string | null;
+          duration_label?: string | null;
+          level?: string | null;
+          rating?: number | null;
+          rating_count?: number;
+          enrolled_count?: number;
+          what_you_will_learn?: Json;
+          tags?: Json;
           price?: number;
           is_published?: boolean;
           created_at?: string;
@@ -111,6 +135,8 @@ export type Database = {
           title: string;
           youtube_url: string | null;
           content: string | null;
+          lesson_type: "video" | "resource";
+          duration_label: string | null;
           duration_minutes: number | null;
           sort_order: number;
           created_at: string;
@@ -122,6 +148,8 @@ export type Database = {
           title: string;
           youtube_url?: string | null;
           content?: string | null;
+          lesson_type?: "video" | "resource";
+          duration_label?: string | null;
           duration_minutes?: number | null;
           sort_order?: number;
           created_at?: string;
@@ -133,6 +161,8 @@ export type Database = {
           title?: string;
           youtube_url?: string | null;
           content?: string | null;
+          lesson_type?: "video" | "resource";
+          duration_label?: string | null;
           duration_minutes?: number | null;
           sort_order?: number;
           created_at?: string;
@@ -270,6 +300,129 @@ export type Database = {
           },
           {
             foreignKeyName: "lesson_progress_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      quizzes: {
+        Row: {
+          id: string;
+          title: string;
+          description: string | null;
+          lesson_id: string | null;
+          module_id: string | null;
+          sort_order: number;
+          questions: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          description?: string | null;
+          lesson_id?: string | null;
+          module_id?: string | null;
+          sort_order?: number;
+          questions?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          description?: string | null;
+          lesson_id?: string | null;
+          module_id?: string | null;
+          sort_order?: number;
+          questions?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "quizzes_lesson_id_fkey";
+            columns: ["lesson_id"];
+            isOneToOne: false;
+            referencedRelation: "lessons";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "quizzes_module_id_fkey";
+            columns: ["module_id"];
+            isOneToOne: false;
+            referencedRelation: "modules";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      assignment_progress: {
+        Row: {
+          id: string;
+          user_id: string;
+          assignment_id: string;
+          completed_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          assignment_id: string;
+          completed_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          assignment_id?: string;
+          completed_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "assignment_progress_assignment_id_fkey";
+            columns: ["assignment_id"];
+            isOneToOne: false;
+            referencedRelation: "assignments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "assignment_progress_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      quiz_progress: {
+        Row: {
+          id: string;
+          user_id: string;
+          quiz_id: string;
+          completed_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          quiz_id: string;
+          completed_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          quiz_id?: string;
+          completed_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "quiz_progress_quiz_id_fkey";
+            columns: ["quiz_id"];
+            isOneToOne: false;
+            referencedRelation: "quizzes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "quiz_progress_user_id_fkey";
             columns: ["user_id"];
             isOneToOne: false;
             referencedRelation: "profiles";

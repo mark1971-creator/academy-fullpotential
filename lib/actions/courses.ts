@@ -6,9 +6,13 @@ import {
   mapCourse,
   mapLesson,
   mapModule,
+  mapQuiz,
 } from "@/lib/supabase/mappers";
 import { hasSupabaseConfig } from "@/lib/env";
+import type { Database } from "@/types/database";
 import type { Course, CourseWithCurriculum, Lesson } from "@/types/lms";
+
+type QuizRow = Database["public"]["Tables"]["quizzes"]["Row"];
 
 type LessonRow = {
   id: string;
@@ -16,6 +20,8 @@ type LessonRow = {
   title: string;
   youtube_url: string | null;
   content: string | null;
+  lesson_type: "video" | "resource";
+  duration_label: string | null;
   duration_minutes: number | null;
   sort_order: number;
   created_at: string;
@@ -31,6 +37,7 @@ type LessonRow = {
     created_at: string;
     updated_at: string;
   }>;
+  quizzes: QuizRow[];
 };
 
 type ModuleRow = {
@@ -52,18 +59,10 @@ type ModuleRow = {
     created_at: string;
     updated_at: string;
   }>;
+  quizzes: QuizRow[];
 };
 
-type CurriculumRow = {
-  id: string;
-  title: string;
-  description: string | null;
-  slug: string;
-  image_url: string | null;
-  price: number;
-  is_published: boolean;
-  created_at: string;
-  updated_at: string;
+type CurriculumRow = Database["public"]["Tables"]["courses"]["Row"] & {
   modules: ModuleRow[];
 };
 
@@ -73,19 +72,25 @@ const CURRICULUM_SELECT = `
     *,
     lessons (
       *,
-      assignments (*)
+      assignments (*),
+      quizzes (*)
     ),
-    assignments (*)
+    assignments (*),
+    quizzes (*)
   )
 `;
 
-function mapLessonWithAssignments(row: LessonRow): Lesson {
+function mapLessonWithNested(row: LessonRow): Lesson {
   const lesson = mapLesson(row);
   const assignments = (row.assignments ?? [])
     .filter((assignment) => assignment.lesson_id !== null)
     .map(mapAssignment);
+  const quizzes = (row.quizzes ?? [])
+    .filter((quiz) => quiz.lesson_id !== null)
+    .map(mapQuiz)
+    .sort((a, b) => a.order - b.order);
 
-  return { ...lesson, assignments };
+  return { ...lesson, assignments, quizzes };
 }
 
 export async function getPublishedCourses(): Promise<Course[]> {
@@ -163,13 +168,17 @@ function mapCourseWithCurriculum(row: CurriculumRow): CourseWithCurriculum {
     .map((moduleRow) => {
       const module = mapModule(moduleRow);
       const lessons = (moduleRow.lessons ?? [])
-        .map(mapLessonWithAssignments)
+        .map(mapLessonWithNested)
         .sort((a, b) => a.order - b.order);
       const assignments = (moduleRow.assignments ?? [])
         .filter((assignment) => assignment.module_id !== null)
         .map(mapAssignment);
+      const quizzes = (moduleRow.quizzes ?? [])
+        .filter((quiz) => quiz.module_id !== null)
+        .map(mapQuiz)
+        .sort((a, b) => a.order - b.order);
 
-      return { ...module, lessons, assignments };
+      return { ...module, lessons, assignments, quizzes };
     })
     .sort((a, b) => a.order - b.order);
 

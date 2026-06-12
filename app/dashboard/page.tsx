@@ -3,8 +3,11 @@ import { BookOpen } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { EnrolledCourses } from "@/components/dashboard/enrolled-courses";
 import { BrandCard, PageShell } from "@/components/ui/brand-elements";
 import { Button } from "@/components/ui/button";
+import { getUserEnrollments } from "@/lib/actions/enrollments";
+import { syncCurrentUserProfile } from "@/lib/actions/users";
 import { AUTH_ROUTES } from "@/lib/clerk/routes";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +32,14 @@ export default async function DashboardPage() {
     redirect(AUTH_ROUTES.signIn);
   }
 
-  const user = await currentUser();
+  const [user, enrollments] = await Promise.all([
+    currentUser(),
+    (async () => {
+      await syncCurrentUserProfile();
+      return getUserEnrollments();
+    })(),
+  ]);
+
   const displayName = getDisplayName(user);
   const email = user?.primaryEmailAddress?.emailAddress;
 
@@ -60,8 +70,7 @@ export default async function DashboardPage() {
             <div>
               <h2 className="font-heading text-2xl font-light">Your Enrolled Courses</h2>
               <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
-                Your enrolled courses will appear here with progress tracking and quick
-                access to your next lesson.
+                Track your progress and pick up where you left off in each program.
               </p>
             </div>
           </div>
@@ -76,15 +85,7 @@ export default async function DashboardPage() {
           </Button>
         </div>
 
-        <div className="mt-8 rounded-sm border border-dashed border-border/80 bg-brand-warm/40 px-6 py-12 text-center">
-          <p className="font-heading text-xl font-light text-foreground/80">
-            Your enrolled courses will appear here
-          </p>
-          <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-            Explore certification and training programs to begin your Human Potential
-            journey.
-          </p>
-        </div>
+        <EnrolledCourses enrollments={enrollments} />
       </BrandCard>
     </PageShell>
   );

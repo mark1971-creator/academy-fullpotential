@@ -1,4 +1,4 @@
-import { ArrowRight, BookOpen } from "lucide-react";
+import { ArrowRight, BookOpen, Clock, GraduationCap } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -53,12 +53,26 @@ export default async function CoursesPage() {
                 </div>
               )}
               <div className="flex flex-1 flex-col p-8">
-                <p className="text-xs font-medium uppercase tracking-[0.2em] text-brand-gold">
-                  {formatPrice(course.price)}
-                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-brand-gold">
+                    {formatPrice(course.price)}
+                  </p>
+                  {course.level && (
+                    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                      <GraduationCap className="size-3" />
+                      {course.level}
+                    </span>
+                  )}
+                </div>
                 <h2 className="mt-3 font-heading text-2xl font-light leading-snug">
                   {course.title}
                 </h2>
+                {course.durationLabel && (
+                  <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Clock className="size-3.5" />
+                    {course.durationLabel}
+                  </p>
+                )}
                 <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
                   {course.description
                     ? truncateText(course.description, 140)
