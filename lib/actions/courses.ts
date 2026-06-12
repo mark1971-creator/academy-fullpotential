@@ -137,54 +137,41 @@ export async function getCourseBySlug(slug: string): Promise<Course | null> {
 export async function getCourseWithCurriculumBySlug(
   slug: string,
 ): Promise<CourseWithCurriculum | null> {
+  console.log("🚀 Starting getCourseWithCurriculumBySlug for:", slug);
+
   if (!hasSupabaseConfig()) {
-    console.warn("Supabase config missing");
+    console.warn("❌ Supabase config missing");
     return null;
   }
 
   const supabase = await createClient();
+  console.log("✅ Supabase client created");
 
   const { data, error } = await supabase
     .from("courses")
-    .select(`
-      *,
-      modules (
-        *,
-        lessons (*)
-      )
-    `)
+    .select("*, modules(id, title, sort_order)")
     .eq("slug", slug)
     .eq("is_published", true)
     .maybeSingle();
 
   if (error) {
-    console.error("getCourseWithCurriculumBySlug - Supabase Error:", error);
-    throw new Error(`Failed to load course: ${error.message}`);
+    console.error("🔴 Supabase Error:", error);
+    throw new Error(`Database error: ${error.message}`);
   }
 
   if (!data) {
-    console.warn("Course not found:", slug);
+    console.warn("❌ Course not found");
     return null;
   }
 
-  // Simple, safe mapping
+  console.log("✅ Course data loaded successfully");
+
   const course = mapCourse(data);
+  const modules = (data.modules ?? []).map((m: any) => mapModule(m));
 
-  const modules = (data.modules ?? [])
-    .map((moduleRow: any) => {
-      const module = mapModule(moduleRow);
-      const lessons = (moduleRow.lessons ?? [])
-        .map((lessonRow: any) => mapLesson(lessonRow))
-        .sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0));
+  console.log("✅ Mapping completed, modules count:", modules.length);
 
-      return { ...module, lessons };
-    })
-    .sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0));
-
-  return {
-    ...course,
-    modules,
-  } as CourseWithCurriculum;
+  return { ...course, modules } as CourseWithCurriculum;
 }
 function mapCourseWithCurriculum(row: CurriculumRow): CourseWithCurriculum {
   const course = mapCourse(row);
