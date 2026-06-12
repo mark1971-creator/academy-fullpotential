@@ -3,16 +3,15 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { getPublishedCourses } from "@/lib/actions/courses";
+import { formatPrice, truncateText } from "@/lib/courses/utils";
 import { BrandCard, PageShell, SectionHeading } from "@/components/ui/brand-elements";
 import { Button } from "@/components/ui/button";
 
-function formatPrice(price: number) {
-  if (price === 0) return "Free";
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(price);
-}
+export const metadata = {
+  title: "Programs",
+  description:
+    "Browse certification and training programs from Being at Full Potential.",
+};
 
 export default async function CoursesPage() {
   const courses = await getPublishedCourses();
@@ -38,13 +37,14 @@ export default async function CoursesPage() {
         <div className="mt-14 grid gap-8 md:grid-cols-2 xl:grid-cols-3">
           {courses.map((course) => (
             <BrandCard key={course.id} className="flex flex-col overflow-hidden p-0">
-              {course.imageUrl ? (
+              {course.thumbnailUrl ? (
                 <div className="relative aspect-[16/10] bg-muted">
                   <Image
-                    src={course.imageUrl}
+                    src={course.thumbnailUrl}
                     alt={course.title}
                     fill
                     className="object-cover"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
                   />
                 </div>
               ) : (
@@ -60,7 +60,9 @@ export default async function CoursesPage() {
                   {course.title}
                 </h2>
                 <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
-                  {course.description}
+                  {course.description
+                    ? truncateText(course.description, 140)
+                    : "Explore this transformational program."}
                 </p>
                 <Button
                   variant="outline"
@@ -68,7 +70,7 @@ export default async function CoursesPage() {
                   nativeButton={false}
                   render={<Link href={`/courses/${course.slug}`} />}
                 >
-                  View program
+                  View Course
                   <ArrowRight className="size-4" />
                 </Button>
               </div>

@@ -109,7 +109,7 @@ export type Database = {
           id: string;
           module_id: string;
           title: string;
-          video_url: string | null;
+          youtube_url: string | null;
           content: string | null;
           duration_minutes: number | null;
           sort_order: number;
@@ -120,7 +120,7 @@ export type Database = {
           id?: string;
           module_id: string;
           title: string;
-          video_url?: string | null;
+          youtube_url?: string | null;
           content?: string | null;
           duration_minutes?: number | null;
           sort_order?: number;
@@ -131,7 +131,7 @@ export type Database = {
           id?: string;
           module_id?: string;
           title?: string;
-          video_url?: string | null;
+          youtube_url?: string | null;
           content?: string | null;
           duration_minutes?: number | null;
           sort_order?: number;
@@ -141,6 +141,57 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "lessons_module_id_fkey";
+            columns: ["module_id"];
+            isOneToOne: false;
+            referencedRelation: "modules";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      assignments: {
+        Row: {
+          id: string;
+          title: string;
+          description: string | null;
+          file_url: string;
+          file_type: "pdf" | "doc" | "docx";
+          lesson_id: string | null;
+          module_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          description?: string | null;
+          file_url: string;
+          file_type: "pdf" | "doc" | "docx";
+          lesson_id?: string | null;
+          module_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          description?: string | null;
+          file_url?: string;
+          file_type?: "pdf" | "doc" | "docx";
+          lesson_id?: string | null;
+          module_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "assignments_lesson_id_fkey";
+            columns: ["lesson_id"];
+            isOneToOne: false;
+            referencedRelation: "lessons";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "assignments_module_id_fkey";
             columns: ["module_id"];
             isOneToOne: false;
             referencedRelation: "modules";
