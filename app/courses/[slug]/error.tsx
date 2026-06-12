@@ -1,5 +1,10 @@
 "use client";
 
+import { useEffect } from "react";
+import Link from "next/link";
+
+import { Button } from "@/components/ui/button";
+
 export default function CourseDetailError({
   error,
   reset,
@@ -7,22 +12,25 @@ export default function CourseDetailError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  console.error("🔴 === FULL ERROR BOUNDARY TRIGGERED ===", error);
-  console.error("🔴 Error Name:", error.name);
-  console.error("🔴 Error Message:", error.message);
-  console.error("🔴 Error Stack:", error.stack);
-  console.error("🔴 Digest:", error.digest);
+  useEffect(() => {
+    console.error("Course detail error:", error);
+  }, [error]);
 
   return (
-    <div className="p-12 text-center max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold text-red-600 mb-6">Server Error Occurred</h1>
-      <p className="mb-8 text-lg">Check the browser console for full details.</p>
-      <button 
-        onClick={reset}
-        className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-lg font-medium"
-      >
-        Try Again
-      </button>
+    <div className="mx-auto flex max-w-lg flex-1 flex-col items-center justify-center px-6 py-20 text-center">
+      <p className="text-xs uppercase tracking-[0.28em] text-brand-gold">
+        BEING at Full Potential
+      </p>
+      <h1 className="mt-3 font-heading text-3xl font-light">Could not load this program</h1>
+      <p className="mt-3 text-sm text-muted-foreground">
+        Something went wrong while loading the course details. Please try again.
+      </p>
+      <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+        <Button onClick={reset}>Try again</Button>
+        <Button variant="outline" nativeButton={false} render={<Link href="/courses" />}>
+          Back to catalog
+        </Button>
+      </div>
     </div>
   );
 }
