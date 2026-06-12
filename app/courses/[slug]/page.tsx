@@ -1,87 +1,40 @@
-import { auth } from "@clerk/nextjs/server";
 import { notFound } from "next/navigation";
-
-import { CourseHero } from "@/components/course/CourseHero";
-import { CoursePlayer } from "@/components/course/CoursePlayer";
-import { PageShell } from "@/components/ui/brand-elements";
-import { getCourseWithCurriculumBySlug } from "@/lib/actions/courses";
-import {
-  getCourseItemProgress,
-  isUserEnrolledInCourse,
-} from "@/lib/actions/enrollments";
-import { getHeroVideoUrl } from "@/lib/courses/utils";
 
 type CourseDetailPageProps = {
   params: Promise<{ slug: string }>;
 };
 
-export async function generateMetadata({ params }: CourseDetailPageProps) {
-  const { slug } = await params;
-  const course = await getCourseWithCurriculumBySlug(slug);
-
-  if (!course) {
-    return { title: "Program not found" };
-  }
-
-  return {
-    title: course.title,
-    description: course.description ?? `Explore ${course.title} at Full Potential Academy.`,
-  };
-}
-
 export default async function CourseDetailPage({ params }: CourseDetailPageProps) {
   const { slug } = await params;
-  console.log("📄 CourseDetailPage rendered for slug:", slug);
 
-  let course;
-  try {
-    course = await getCourseWithCurriculumBySlug(slug);
-    console.log("✅ Course loaded:", course ? "Yes - " + course.title : "No");
-  } catch (err: any) {
-    console.error("🔴 Error loading course:", err);
-    course = null;
-  }
-
-  if (!course) {
-    console.warn("❌ No course data - showing notFound");
-    notFound();
-  }
-
-  const { userId } = await auth();
-  const [isEnrolled, progress] = await Promise.all([
-    isUserEnrolledInCourse(course.id),
-    getCourseItemProgress(course),
-  ]);
-
-  const lessonCount = course.modules.reduce(
-    (total, module) => total + module.lessons.length,
-    0,
-  );
-
-  const heroVideoUrl = getHeroVideoUrl(course);
+  // Hardcoded course data for testing
+  const course = {
+    id: "test-id",
+    title: "Certification – Human Potential Development Coach Training",
+    description: "This is a test. If you see this, the page UI works.",
+    slug: "human-potential-coach-certification",
+    modules: [
+      {
+        id: "m1",
+        title: "Module 1: Authentic introductions",
+        sort_order: 1,
+        lessons: [
+          { id: "l1", title: "Getting to know each other", youtube_url: "https://youtu.be/2XXFEndXKhE", sort_order: 1 }
+        ]
+      }
+    ]
+  };
 
   return (
-    <PageShell className="max-w-[1400px]">
-      <CourseHero
-        course={course}
-        lessonCount={lessonCount}
-        heroVideoUrl={heroVideoUrl}
-        isEnrolled={isEnrolled}
-        isSignedIn={Boolean(userId)}
-      />
-
-      <section className="mt-10 lg:mt-14">
-        <div className="mb-6">
-          <h2 className="font-heading text-2xl font-light text-brand-navy sm:text-3xl">
-            Start learning
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Work through each module at your own pace. Your progress is saved as you
-            complete lessons.
-          </p>
-        </div>
-        <CoursePlayer course={course} progress={progress} isEnrolled={isEnrolled} />
-      </section>
-    </PageShell>
+    <div className="p-10 max-w-4xl mx-auto">
+      <h1 className="text-4xl font-bold mb-4">✅ Page is rendering!</h1>
+      <h2 className="text-2xl mb-6">{course.title}</h2>
+      <p className="text-lg mb-8">{course.description}</p>
+      
+      <h3 className="text-xl font-semibold mb-4">Modules:</h3>
+      <pre className="bg-gray-100 p-4 rounded text-sm overflow-auto">
+        {JSON.stringify(course.modules, null, 2)}
+      </pre>
+    </div>
   );
 }
