@@ -21,6 +21,54 @@ import type { Database } from "@/types/database";
 import type { Course, CourseWithCurriculum, Lesson } from "@/types/lms";
 
 /**
+ * Serializes any thrown value into a useful log string.
+ *
+ * Supabase surfaces query failures as a `PostgrestError` plain object
+ * (`{ message, code, details, hint }`) that is NOT an `Error` instance, so a
+ * naive `String(error)` logs the useless `"[object Object]"`. We extract the
+ * structured fields so Vercel function logs reveal the real cause (e.g. an
+ * invalid API key → `code=PGRST301`, a missing relationship → `code=PGRST200`,
+ * a missing table/column → `code=42P01`/`42703`). None of these fields contain
+ * secrets, so this is safe to log in production.
+ */
+function describeError(error: unknown): string {
+  if (error && typeof error === "object") {
+    const e = error as {
+      message?: unknown;
+      code?: unknown;
+      details?: unknown;
+      hint?: unknown;
+      status?: unknown;
+    };
+    const parts = [
+      typeof e.message === "string" ? `message=${e.message}` : null,
+      e.code != null ? `code=${e.code}` : null,
+      e.status != null ? `status=${e.status}` : null,
+      e.details != null ? `details=${e.details}` : null,
+      e.hint != null ? `hint=${e.hint}` : null,
+    ].filter(Boolean);
+    if (parts.length > 0) return parts.join(" | ");
+  }
+  return error instanceof Error ? error.message : String(error);
+}
+
+/**
+ * Logs the Supabase project host (public, from NEXT_PUBLIC_SUPABASE_URL) so the
+ * logs confirm which project the deployment is actually pointing at. Helps catch
+ * the common case where Vercel env vars point to a different/paused project than
+ * local. Never logs keys.
+ */
+function supabaseHostHint(): string {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!url) return "supabaseUrl=<unset>";
+  try {
+    return `supabaseHost=${new URL(url).host}`;
+  } catch {
+    return "supabaseUrl=<invalid>";
+  }
+}
+
+/**
  * Centralized handling for query failures. Connectivity failures fall back to
  * local fixture data in development (or rethrow a clear message in production);
  * all other errors rethrow a generic, safe message.
@@ -38,19 +86,23 @@ function handleQueryError<T>(
     if (shouldUseLocalDataFallback()) {
       console.warn(
         `[${label}] Supabase is unreachable — serving local development fallback data. ` +
-          `Verify NEXT_PUBLIC_SUPABASE_URL points to an existing, running project and that the keys are correct.`,
+          `Verify NEXT_PUBLIC_SUPABASE_URL points to an existing, running project and that the keys are correct. ` +
+          `(${supabaseHostHint()})`,
       );
       return fallback();
     }
 
-    console.error(`[${label}] Supabase is unreachable (connectivity error):`, error);
+    console.error(
+      `[${label}] Supabase is unreachable (connectivity error) — ${supabaseHostHint()}: ${describeError(error)}`,
+    );
     throw new Error(
       "Cannot reach the database. Please verify the Supabase project URL and API keys.",
     );
   }
 
-  const message = error instanceof Error ? error.message : String(error);
-  console.error(`[${label}]`, message);
+  console.error(
+    `[${label}] Query failed — ${supabaseHostHint()}: ${describeError(error)}`,
+  );
   throw new Error("Failed to load course data");
 }
 
@@ -184,9 +236,17 @@ export async function getCourseWithCurriculumBySlug(
   slug: string,
 ): Promise<CourseWithCurriculum | null> {
   if (!hasSupabaseConfig()) {
-    return shouldUseLocalDataFallback()
-      ? getFixtureCourseWithCurriculumBySlug(slug)
-      : null;
+    if (!shouldUseLocalDataFallback()) {
+      // Production with no Supabase config: this returns null → notFound() (a
+      // 404), which is easy to mistake for "course doesn't exist". Surface it.
+      console.error(
+        `[getCourseWithCurriculumBySlug] Supabase env vars are not present in this deployment ` +
+          `(NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY). ${supabaseHostHint()}. ` +
+          `Set them for the Production environment in Vercel and redeploy.`,
+      );
+      return null;
+    }
+    return getFixtureCourseWithCurriculumBySlug(slug);
   }
 
   try {
@@ -201,6 +261,11 @@ export async function getCourseWithCurriculumBySlug(
     if (error) throw error;
 
     if (!data) {
+      console.warn(
+        `[getCourseWithCurriculumBySlug] No published course found for slug="${slug}" ` +
+          `(${supabaseHostHint()}). The query succeeded but returned no row — likely a schema/data ` +
+          `difference (course not published, or RLS hiding it) on this project.`,
+      );
       return null;
     }
 
