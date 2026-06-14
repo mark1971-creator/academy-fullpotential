@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed": "node supabase/seed_course_meta.mjs && node supabase/seed_lessons.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

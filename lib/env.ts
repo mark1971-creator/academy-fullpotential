@@ -27,3 +27,17 @@ export function getSupabaseAnonKey() {
 export function getSupabaseServiceRoleKey() {
   return required("SUPABASE_SERVICE_ROLE_KEY");
 }
+
+/**
+ * Whether to fall back to local fixture data when Supabase is unreachable.
+ *
+ * Enabled in development by default so the UI keeps working without a live DB.
+ * Never enabled in production unless `NEXT_PUBLIC_USE_LOCAL_DATA=true` is set
+ * explicitly. Set `NEXT_PUBLIC_USE_LOCAL_DATA=false` to opt out in development.
+ */
+export function shouldUseLocalDataFallback() {
+  const flag = process.env.NEXT_PUBLIC_USE_LOCAL_DATA;
+  if (flag === "true") return true;
+  if (flag === "false") return false;
+  return process.env.NODE_ENV !== "production";
+}

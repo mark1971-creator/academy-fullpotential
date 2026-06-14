@@ -1,5 +1,7 @@
 "use server";
 
+import { unstable_rethrow } from "next/navigation";
+
 import { createClient } from "@/lib/supabase/server";
 import {
   mapAssignment,
@@ -8,9 +10,49 @@ import {
   mapModule,
   mapQuiz,
 } from "@/lib/supabase/mappers";
-import { hasSupabaseConfig } from "@/lib/env";
+import { hasSupabaseConfig, shouldUseLocalDataFallback } from "@/lib/env";
+import {
+  getFixtureCourseBySlug,
+  getFixtureCourseWithCurriculumBySlug,
+  getFixtureCourses,
+} from "@/lib/courses/fixtures";
+import { isConnectivityError } from "@/lib/supabase/errors";
 import type { Database } from "@/types/database";
 import type { Course, CourseWithCurriculum, Lesson } from "@/types/lms";
+
+/**
+ * Centralized handling for query failures. Connectivity failures fall back to
+ * local fixture data in development (or rethrow a clear message in production);
+ * all other errors rethrow a generic, safe message.
+ */
+function handleQueryError<T>(
+  label: string,
+  error: unknown,
+  fallback: () => T,
+): T {
+  // Never swallow Next.js internal control-flow signals (dynamic rendering via
+  // cookies()/headers(), redirect, notFound) — re-throw them untouched.
+  unstable_rethrow(error);
+
+  if (isConnectivityError(error)) {
+    if (shouldUseLocalDataFallback()) {
+      console.warn(
+        `[${label}] Supabase is unreachable — serving local development fallback data. ` +
+          `Verify NEXT_PUBLIC_SUPABASE_URL points to an existing, running project and that the keys are correct.`,
+      );
+      return fallback();
+    }
+
+    console.error(`[${label}] Supabase is unreachable (connectivity error):`, error);
+    throw new Error(
+      "Cannot reach the database. Please verify the Supabase project URL and API keys.",
+    );
+  }
+
+  const message = error instanceof Error ? error.message : String(error);
+  console.error(`[${label}]`, message);
+  throw new Error("Failed to load course data");
+}
 
 type QuizRow = Database["public"]["Tables"]["quizzes"]["Row"];
 
@@ -95,84 +137,81 @@ function mapLessonWithNested(row: LessonRow): Lesson {
 
 export async function getPublishedCourses(): Promise<Course[]> {
   if (!hasSupabaseConfig()) {
-    return [];
+    return shouldUseLocalDataFallback() ? getFixtureCourses() : [];
   }
 
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("courses")
-    .select("*")
-    .eq("is_published", true)
-    .order("created_at", { ascending: false });
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("courses")
+      .select("*")
+      .eq("is_published", true)
+      .order("created_at", { ascending: false });
 
-  if (error) {
-    console.error("getPublishedCourses:", error.message);
-    throw new Error("Failed to load courses");
+    if (error) throw error;
+
+    return (data ?? []).map(mapCourse);
+  } catch (error) {
+    return handleQueryError("getPublishedCourses", error, getFixtureCourses);
   }
-
-  return (data ?? []).map(mapCourse);
 }
 
 export async function getCourseBySlug(slug: string): Promise<Course | null> {
   if (!hasSupabaseConfig()) {
-    return null;
+    return shouldUseLocalDataFallback() ? getFixtureCourseBySlug(slug) : null;
   }
 
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("courses")
-    .select("*")
-    .eq("slug", slug)
-    .eq("is_published", true)
-    .maybeSingle();
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("courses")
+      .select("*")
+      .eq("slug", slug)
+      .eq("is_published", true)
+      .maybeSingle();
 
-  if (error) {
-    console.error("getCourseBySlug:", error.message);
-    throw new Error("Failed to load course");
+    if (error) throw error;
+
+    return data ? mapCourse(data) : null;
+  } catch (error) {
+    return handleQueryError("getCourseBySlug", error, () =>
+      getFixtureCourseBySlug(slug),
+    );
   }
-
-  return data ? mapCourse(data) : null;
 }
 
 export async function getCourseWithCurriculumBySlug(
   slug: string,
 ): Promise<CourseWithCurriculum | null> {
-  console.log("🚀 Starting getCourseWithCurriculumBySlug for:", slug);
-
   if (!hasSupabaseConfig()) {
-    console.warn("❌ Supabase config missing");
-    return null;
+    return shouldUseLocalDataFallback()
+      ? getFixtureCourseWithCurriculumBySlug(slug)
+      : null;
   }
 
-  const supabase = await createClient();
-  console.log("✅ Supabase client created");
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("courses")
+      .select(CURRICULUM_SELECT)
+      .eq("slug", slug)
+      .eq("is_published", true)
+      .maybeSingle();
 
-  const { data, error } = await supabase
-    .from("courses")
-    .select("*, modules(id, title, sort_order)")
-    .eq("slug", slug)
-    .eq("is_published", true)
-    .maybeSingle();
+    if (error) throw error;
 
-  if (error) {
-    console.error("🔴 Supabase Error:", error);
-    throw new Error(`Database error: ${error.message}`);
+    if (!data) {
+      return null;
+    }
+
+    return mapCourseWithCurriculum(data as CurriculumRow);
+  } catch (error) {
+    return handleQueryError("getCourseWithCurriculumBySlug", error, () =>
+      getFixtureCourseWithCurriculumBySlug(slug),
+    );
   }
-
-  if (!data) {
-    console.warn("❌ Course not found");
-    return null;
-  }
-
-  console.log("✅ Course data loaded successfully");
-
-  const course = mapCourse(data);
-  const modules = (data.modules ?? []).map((m: any) => mapModule(m));
-
-  console.log("✅ Mapping completed, modules count:", modules.length);
-
-  return { ...course, modules } as CourseWithCurriculum;
 }
+
 function mapCourseWithCurriculum(row: CurriculumRow): CourseWithCurriculum {
   const course = mapCourse(row);
 

@@ -7,6 +7,7 @@ import { syncCurrentUserProfile } from "@/lib/actions/users";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { mapCourse, mapEnrollment } from "@/lib/supabase/mappers";
+import { resolveSafeDefault } from "@/lib/supabase/errors";
 import { calculateProgressPercent, getCurriculumItemIds } from "@/lib/courses/utils";
 import { hasSupabaseAdminConfig, hasSupabaseConfig } from "@/lib/env";
 import type {
@@ -22,22 +23,23 @@ export async function getUserEnrollments(): Promise<EnrollmentWithCourse[]> {
     return [];
   }
 
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("enrollments")
-    .select("*, courses (*)")
-    .eq("user_id", userId)
-    .order("enrolled_at", { ascending: false });
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("enrollments")
+      .select("*, courses (*)")
+      .eq("user_id", userId)
+      .order("enrolled_at", { ascending: false });
 
-  if (error) {
-    console.error("getUserEnrollments:", error.message);
-    return [];
+    if (error) throw error;
+
+    return (data ?? []).map((row) => ({
+      ...mapEnrollment(row),
+      course: mapCourse(row.courses),
+    }));
+  } catch (error) {
+    return resolveSafeDefault("getUserEnrollments", error, []);
   }
-
-  return (data ?? []).map((row) => ({
-    ...mapEnrollment(row),
-    course: mapCourse(row.courses),
-  }));
 }
 
 export async function isUserEnrolledInCourse(courseId: string): Promise<boolean> {
@@ -46,20 +48,21 @@ export async function isUserEnrolledInCourse(courseId: string): Promise<boolean>
     return false;
   }
 
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("enrollments")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("course_id", courseId)
-    .maybeSingle();
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("enrollments")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("course_id", courseId)
+      .maybeSingle();
 
-  if (error) {
-    console.error("isUserEnrolledInCourse:", error.message);
-    return false;
+    if (error) throw error;
+
+    return Boolean(data);
+  } catch (error) {
+    return resolveSafeDefault("isUserEnrolledInCourse", error, false);
   }
-
-  return Boolean(data);
 }
 
 export async function enrollInCourse(
@@ -122,37 +125,50 @@ export async function getCourseItemProgress(
   }
 
   const itemIds = getCurriculumItemIds(course);
-  const supabase = await createClient();
 
-  const [lessonsResult, assignmentsResult, quizzesResult] = await Promise.all([
-    itemIds.lessonIds.length > 0
-      ? supabase
-          .from("lesson_progress")
-          .select("lesson_id")
-          .eq("user_id", userId)
-          .in("lesson_id", itemIds.lessonIds)
-      : Promise.resolve({ data: [], error: null }),
-    itemIds.assignmentIds.length > 0
-      ? supabase
-          .from("assignment_progress")
-          .select("assignment_id")
-          .eq("user_id", userId)
-          .in("assignment_id", itemIds.assignmentIds)
-      : Promise.resolve({ data: [], error: null }),
-    itemIds.quizIds.length > 0
-      ? supabase
-          .from("quiz_progress")
-          .select("quiz_id")
-          .eq("user_id", userId)
-          .in("quiz_id", itemIds.quizIds)
-      : Promise.resolve({ data: [], error: null }),
-  ]);
+  try {
+    const supabase = await createClient();
 
-  return {
-    lessonIds: (lessonsResult.data ?? []).map((row) => row.lesson_id),
-    assignmentIds: (assignmentsResult.data ?? []).map((row) => row.assignment_id),
-    quizIds: (quizzesResult.data ?? []).map((row) => row.quiz_id),
-  };
+    const [lessonsResult, assignmentsResult, quizzesResult] = await Promise.all([
+      itemIds.lessonIds.length > 0
+        ? supabase
+            .from("lesson_progress")
+            .select("lesson_id")
+            .eq("user_id", userId)
+            .in("lesson_id", itemIds.lessonIds)
+        : Promise.resolve({ data: [], error: null }),
+      itemIds.assignmentIds.length > 0
+        ? supabase
+            .from("assignment_progress")
+            .select("assignment_id")
+            .eq("user_id", userId)
+            .in("assignment_id", itemIds.assignmentIds)
+        : Promise.resolve({ data: [], error: null }),
+      itemIds.quizIds.length > 0
+        ? supabase
+            .from("quiz_progress")
+            .select("quiz_id")
+            .eq("user_id", userId)
+            .in("quiz_id", itemIds.quizIds)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+
+    const firstError =
+      lessonsResult.error ?? assignmentsResult.error ?? quizzesResult.error;
+    if (firstError) throw firstError;
+
+    return {
+      lessonIds: (lessonsResult.data ?? []).map((row) => row.lesson_id),
+      assignmentIds: (assignmentsResult.data ?? []).map((row) => row.assignment_id),
+      quizIds: (quizzesResult.data ?? []).map((row) => row.quiz_id),
+    };
+  } catch (error) {
+    return resolveSafeDefault("getCourseItemProgress", error, {
+      lessonIds: [],
+      assignmentIds: [],
+      quizIds: [],
+    });
+  }
 }
 
 export async function markCurriculumItemComplete(

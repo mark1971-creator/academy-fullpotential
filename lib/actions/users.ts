@@ -4,12 +4,14 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { mapProfile } from "@/lib/supabase/mappers";
+import { resolveSafeDefault } from "@/lib/supabase/errors";
 import { hasSupabaseAdminConfig } from "@/lib/env";
 import type { Profile } from "@/types/lms";
 
 /**
  * Upserts the signed-in Clerk user into Supabase profiles.
- * Never throws — failures are logged and return null so dashboard stays usable.
+ * Never throws (besides Next.js control-flow) — failures degrade to null so the
+ * dashboard stays usable. Connectivity issues log a single concise warning.
  */
 export async function syncCurrentUserProfile(): Promise<Profile | null> {
   try {
@@ -39,14 +41,10 @@ export async function syncCurrentUserProfile(): Promise<Profile | null> {
       .select("*")
       .single();
 
-    if (error) {
-      console.error("syncCurrentUserProfile:", error.message);
-      return null;
-    }
+    if (error) throw error;
 
     return mapProfile(data);
   } catch (error) {
-    console.error("syncCurrentUserProfile:", error);
-    return null;
+    return resolveSafeDefault("syncCurrentUserProfile", error, null);
   }
 }
