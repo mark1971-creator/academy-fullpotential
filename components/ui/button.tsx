@@ -8,19 +8,20 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-brand-navy text-primary-foreground hover:bg-brand-navy-mid",
-        gold: "bg-brand-gold font-semibold uppercase tracking-[0.14em] text-brand-navy-dark hover:bg-brand-gold-light",
+        default:
+          "bg-brand-gold font-semibold text-brand-charcoal hover:bg-brand-gold-light",
+        gold: "bg-brand-gold font-bold uppercase tracking-[0.14em] text-brand-charcoal hover:bg-brand-gold-light hover:shadow-[0_10px_28px_-10px_rgb(250_204_21_/_0.65)]",
         "hero-outline":
-          "border-white/40 bg-transparent font-normal uppercase tracking-[0.14em] text-white hover:border-white hover:bg-white/10",
+          "border-white/40 bg-white/5 font-normal uppercase tracking-[0.14em] text-white hover:border-brand-gold/60 hover:bg-brand-gold/15 hover:text-white",
         outline:
-          "border-border bg-background hover:border-brand-gold/40 hover:bg-brand-warm hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+          "border-border bg-transparent text-foreground hover:border-brand-teal/50 hover:bg-brand-surface-elevated/60 aria-expanded:bg-brand-surface aria-expanded:text-foreground",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
+          "bg-brand-surface text-brand-warm hover:bg-brand-surface-elevated aria-expanded:bg-brand-surface aria-expanded:text-brand-warm",
         ghost:
-          "hover:bg-brand-warm hover:text-brand-navy aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
+          "text-brand-warm/80 hover:bg-white/5 hover:text-brand-cream aria-expanded:bg-brand-surface aria-expanded:text-brand-cream",
         destructive:
-          "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
-        link: "text-brand-navy underline-offset-4 hover:text-brand-gold hover:underline",
+          "bg-destructive/15 text-destructive hover:bg-destructive/25 focus-visible:border-destructive/40 focus-visible:ring-destructive/20",
+        link: "text-brand-gold-light underline-offset-4 hover:text-brand-gold hover:underline",
       },
       size: {
         default:

@@ -28,6 +28,33 @@ export function getSupabaseServiceRoleKey() {
   return required("SUPABASE_SERVICE_ROLE_KEY");
 }
 
+export function hasStripeConfig() {
+  return Boolean(process.env.STRIPE_SECRET_KEY);
+}
+
+export function hasStripeWebhookConfig() {
+  return Boolean(process.env.STRIPE_WEBHOOK_SECRET);
+}
+
+export function getStripeSecretKey() {
+  return required("STRIPE_SECRET_KEY");
+}
+
+export function getStripeWebhookSecret() {
+  return required("STRIPE_WEBHOOK_SECRET");
+}
+
+/** Canonical app URL for Stripe redirects and webhooks. */
+export function getAppBaseUrl() {
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  return "http://localhost:3000";
+}
+
 /**
  * Whether to fall back to local fixture data when Supabase is unreachable.
  *

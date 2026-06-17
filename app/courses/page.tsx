@@ -1,11 +1,11 @@
-import { ArrowRight, BookOpen, Clock, GraduationCap } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
+import { BookOpen } from "lucide-react";
 
-import { getPublishedCourses } from "@/lib/actions/courses";
-import { formatPrice, truncateText } from "@/lib/courses/utils";
-import { BrandCard, PageShell, SectionHeading } from "@/components/ui/brand-elements";
-import { Button } from "@/components/ui/button";
+import { CatalogHero } from "@/components/catalog/catalog-hero";
+import { CourseCard } from "@/components/catalog/course-card";
+import { GraduatesTestimonials } from "@/components/testimonials/graduates-testimonials";
+import { getCourseBySlug, getPublishedCourses } from "@/lib/actions/courses";
+import { HPCC_TESTIMONIALS } from "@/lib/courses/hpcc-testimonials";
+import { PageShell } from "@/components/ui/brand-elements";
 
 export const metadata = {
   title: "Programs",
@@ -14,84 +14,41 @@ export const metadata = {
 };
 
 export default async function CoursesPage() {
-  const courses = await getPublishedCourses();
+  const [courses, hpccCourse] = await Promise.all([
+    getPublishedCourses(),
+    getCourseBySlug("human-potential-coach-certification"),
+  ]);
+
+  const graduateTestimonials =
+    hpccCourse?.testimonials.length ? hpccCourse.testimonials : HPCC_TESTIMONIALS;
 
   return (
-    <PageShell>
-      <SectionHeading
-        eyebrow="Academy"
+    <PageShell className="py-16 sm:py-20 lg:py-28">
+      <CatalogHero
         title="Certification & Training Programs"
         description="Explore programs focused on human potential, coaching, and organizational transformation — designed to help you and your clients achieve breakthroughs."
       />
 
       {courses.length === 0 ? (
-        <BrandCard className="mt-12 text-center">
-          <BookOpen className="mx-auto size-10 text-brand-gold" strokeWidth={1.5} />
-          <h2 className="mt-5 font-heading text-2xl font-light">No programs published yet</h2>
-          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
+        <div className="academy-catalog-card mt-24 p-14 text-center">
+          <BookOpen className="mx-auto size-12 text-brand-gold" strokeWidth={1.5} />
+          <h2 className="mt-7 font-heading text-2xl font-light text-foreground">
+            No programs published yet
+          </h2>
+          <p className="mx-auto mt-4 max-w-md text-base leading-relaxed text-brand-warm-soft">
             Connect Supabase and run the migration + seed to load sample courses, or add
             programs in your database.
           </p>
-        </BrandCard>
+        </div>
       ) : (
-        <div className="mt-14 grid gap-8 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-24 grid gap-10 md:grid-cols-2 xl:grid-cols-3">
           {courses.map((course) => (
-            <BrandCard key={course.id} className="flex flex-col overflow-hidden p-0">
-              {course.thumbnailUrl ? (
-                <div className="relative aspect-[16/10] bg-muted">
-                  <Image
-                    src={course.thumbnailUrl}
-                    alt={course.title}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                  />
-                </div>
-              ) : (
-                <div className="flex aspect-[16/10] items-center justify-center bg-gradient-to-br from-brand-navy/5 to-brand-gold/10">
-                  <BookOpen className="size-10 text-brand-navy/40" strokeWidth={1.25} />
-                </div>
-              )}
-              <div className="flex flex-1 flex-col p-8">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-brand-gold">
-                    {formatPrice(course.price)}
-                  </p>
-                  {course.level && (
-                    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                      <GraduationCap className="size-3" />
-                      {course.level}
-                    </span>
-                  )}
-                </div>
-                <h2 className="mt-3 font-heading text-2xl font-light leading-snug">
-                  {course.title}
-                </h2>
-                {course.durationLabel && (
-                  <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Clock className="size-3.5" />
-                    {course.durationLabel}
-                  </p>
-                )}
-                <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
-                  {course.description
-                    ? truncateText(course.description, 140)
-                    : "Explore this transformational program."}
-                </p>
-                <Button
-                  variant="outline"
-                  className="mt-8 w-full border-brand-navy/20 hover:border-brand-gold hover:bg-brand-gold/5 hover:text-brand-navy"
-                  nativeButton={false}
-                  render={<Link href={`/courses/${course.slug}`} />}
-                >
-                  View Course
-                  <ArrowRight className="size-4" />
-                </Button>
-              </div>
-            </BrandCard>
+            <CourseCard key={course.id} course={course} />
           ))}
         </div>
       )}
+
+      <GraduatesTestimonials testimonials={graduateTestimonials} />
     </PageShell>
   );
 }

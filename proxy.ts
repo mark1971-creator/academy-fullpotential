@@ -2,16 +2,17 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
 import { AUTH_ROUTES } from "@/lib/clerk/routes";
 
-const isProtectedRoute = createRouteMatcher(["/dashboard(.*)"]);
+const isProtectedRoute = createRouteMatcher(["/dashboard(.*)", "/my-courses(.*)"]);
 
 /**
  * Next.js 16 auth middleware (file must be named proxy.ts).
- * Protects /dashboard for authenticated users.
+ * Protects /my-courses and /dashboard for authenticated users.
  */
 export default clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req)) {
+    const signInUrl = new URL(AUTH_ROUTES.signIn, req.url);
     await auth.protect({
-      unauthenticatedUrl: AUTH_ROUTES.signIn,
+      unauthenticatedUrl: signInUrl.toString(),
     });
   }
 });

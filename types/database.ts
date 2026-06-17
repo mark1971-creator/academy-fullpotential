@@ -48,6 +48,9 @@ export type Database = {
           enrolled_count: number;
           what_you_will_learn: Json;
           tags: Json;
+          tagline: string | null;
+          who_this_is_for: Json;
+          testimonials: Json;
           price: number;
           is_published: boolean;
           created_at: string;
@@ -67,6 +70,9 @@ export type Database = {
           enrolled_count?: number;
           what_you_will_learn?: Json;
           tags?: Json;
+          tagline?: string | null;
+          who_this_is_for?: Json;
+          testimonials?: Json;
           price?: number;
           is_published?: boolean;
           created_at?: string;
@@ -86,6 +92,9 @@ export type Database = {
           enrolled_count?: number;
           what_you_will_learn?: Json;
           tags?: Json;
+          tagline?: string | null;
+          who_this_is_for?: Json;
+          testimonials?: Json;
           price?: number;
           is_published?: boolean;
           created_at?: string;
@@ -183,8 +192,9 @@ export type Database = {
           id: string;
           title: string;
           description: string | null;
-          file_url: string;
-          file_type: "pdf" | "doc" | "docx";
+          file_url: string | null;
+          file_type: "pdf" | "doc" | "docx" | null;
+          resource_files: Json;
           lesson_id: string | null;
           module_id: string | null;
           created_at: string;
@@ -194,8 +204,9 @@ export type Database = {
           id?: string;
           title: string;
           description?: string | null;
-          file_url: string;
-          file_type: "pdf" | "doc" | "docx";
+          file_url: string | null;
+          file_type: "pdf" | "doc" | "docx" | null;
+          resource_files: Json;
           lesson_id?: string | null;
           module_id?: string | null;
           created_at?: string;

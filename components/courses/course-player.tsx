@@ -326,27 +326,32 @@ function ContentPanel({
           <div className="flex items-start gap-4">
             <FileText className="mt-0.5 size-6 shrink-0 text-brand-gold" />
             <div className="min-w-0 flex-1">
-              <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                {assignment.fileType.toUpperCase()} download
-              </p>
+              {assignment.fileType && (
+                <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                  {assignment.fileType.toUpperCase()} download
+                </p>
+              )}
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                Download this resource and complete the guided exercises at your own pace.
+                {assignment.description ??
+                  "Download this resource and complete the guided exercises at your own pace."}
               </p>
-              <Button
-                variant="outline"
-                className="mt-6 border-brand-navy/20"
-                nativeButton={false}
-                render={
-                  <a
-                    href={assignment.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  />
-                }
-              >
-                <Download className="size-4" />
-                Download assignment
-              </Button>
+              {assignment.fileUrl && (
+                <Button
+                  variant="outline"
+                  className="mt-6 border-brand-navy/20"
+                  nativeButton={false}
+                  render={
+                    <a
+                      href={assignment.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    />
+                  }
+                >
+                  <Download className="size-4" />
+                  Download assignment
+                </Button>
+              )}
             </div>
           </div>
         </BrandCard>

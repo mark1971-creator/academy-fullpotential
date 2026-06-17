@@ -2,6 +2,7 @@ import type { Database } from "@/types/database";
 import type {
   Assignment,
   AssignmentProgress,
+  AssignmentResource,
   Course,
   Enrollment,
   Lesson,
@@ -10,6 +11,7 @@ import type {
   Quiz,
   QuizProgress,
   QuizQuestion,
+  Testimonial,
   UserProgress,
 } from "@/types/lms";
 
@@ -40,11 +42,33 @@ function parseStringArray(value: CourseRow["what_you_will_learn"]): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 }
 
+function parseTestimonials(value: CourseRow["testimonials"]): Testimonial[] {
+  if (!Array.isArray(value)) return [];
+
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const row = item as Record<string, unknown>;
+    if (typeof row.name !== "string" || typeof row.quote !== "string") return [];
+
+    return [
+      {
+        name: row.name,
+        role: typeof row.role === "string" ? row.role : null,
+        quote: row.quote,
+        rating: typeof row.rating === "number" ? row.rating : null,
+        initials: typeof row.initials === "string" ? row.initials : null,
+        date: typeof row.date === "string" ? row.date : null,
+      },
+    ];
+  });
+}
+
 export function mapCourse(row: CourseRow): Course {
   return {
     id: row.id,
     title: row.title,
     description: row.description,
+    tagline: row.tagline,
     slug: row.slug,
     thumbnailUrl: row.image_url,
     heroVideoUrl: row.hero_video_url,
@@ -54,6 +78,8 @@ export function mapCourse(row: CourseRow): Course {
     ratingCount: row.rating_count,
     enrolledCount: row.enrolled_count,
     whatYouWillLearn: parseStringArray(row.what_you_will_learn),
+    whoThisIsFor: parseStringArray(row.who_this_is_for),
+    testimonials: parseTestimonials(row.testimonials),
     tags: parseStringArray(row.tags),
     price: row.price,
     isPublished: row.is_published,
@@ -96,11 +122,33 @@ export function mapAssignment(row: AssignmentRow): Assignment {
     description: row.description,
     fileUrl: row.file_url,
     fileType: row.file_type,
+    resourceFiles: parseAssignmentResources(row.resource_files),
     lessonId: row.lesson_id,
     moduleId: row.module_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+function parseAssignmentResources(value: AssignmentRow["resource_files"]): AssignmentResource[] {
+  if (!Array.isArray(value)) return [];
+
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const row = item as Record<string, unknown>;
+    if (typeof row.title !== "string" || typeof row.file_url !== "string") return [];
+    if (row.file_type !== "pdf" && row.file_type !== "doc" && row.file_type !== "docx") {
+      return [];
+    }
+
+    return [
+      {
+        title: row.title,
+        fileUrl: row.file_url,
+        fileType: row.file_type,
+      },
+    ];
+  });
 }
 
 export function mapEnrollment(row: EnrollmentRow): Enrollment {

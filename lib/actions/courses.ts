@@ -13,12 +13,14 @@ import {
 import { hasSupabaseConfig, shouldUseLocalDataFallback } from "@/lib/env";
 import {
   getFixtureCourseBySlug,
+  getFixtureCoursePreviewBySlug,
   getFixtureCourseWithCurriculumBySlug,
   getFixtureCourses,
 } from "@/lib/courses/fixtures";
+import { prepareCoursesForCatalog } from "@/lib/courses/catalog-order";
 import { isConnectivityError } from "@/lib/supabase/errors";
 import type { Database } from "@/types/database";
-import type { Course, CourseWithCurriculum, Lesson } from "@/types/lms";
+import type { Course, CoursePreview, CourseWithCurriculum, Lesson } from "@/types/lms";
 
 /**
  * Serializes any thrown value into a useful log string.
@@ -120,17 +122,7 @@ type LessonRow = {
   sort_order: number;
   created_at: string;
   updated_at: string;
-  assignments: Array<{
-    id: string;
-    title: string;
-    description: string | null;
-    file_url: string;
-    file_type: "pdf" | "doc" | "docx";
-    lesson_id: string | null;
-    module_id: string | null;
-    created_at: string;
-    updated_at: string;
-  }>;
+  assignments: Database["public"]["Tables"]["assignments"]["Row"][];
   quizzes: QuizRow[];
 };
 
@@ -142,17 +134,7 @@ type ModuleRow = {
   created_at: string;
   updated_at: string;
   lessons: LessonRow[];
-  assignments: Array<{
-    id: string;
-    title: string;
-    description: string | null;
-    file_url: string;
-    file_type: "pdf" | "doc" | "docx";
-    lesson_id: string | null;
-    module_id: string | null;
-    created_at: string;
-    updated_at: string;
-  }>;
+  assignments: Database["public"]["Tables"]["assignments"]["Row"][];
   quizzes: QuizRow[];
 };
 
@@ -173,6 +155,46 @@ const CURRICULUM_SELECT = `
     quizzes (*)
   )
 `;
+
+const PREVIEW_SELECT = `
+  *,
+  modules (
+    id,
+    course_id,
+    title,
+    sort_order,
+    created_at,
+    updated_at,
+    lessons ( id )
+  )
+`;
+
+type PreviewModuleRow = {
+  id: string;
+  course_id: string;
+  title: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+  lessons: Array<{ id: string }>;
+};
+
+type PreviewRow = Database["public"]["Tables"]["courses"]["Row"] & {
+  modules: PreviewModuleRow[];
+};
+
+function mapCoursePreview(row: PreviewRow): CoursePreview {
+  const course = mapCourse(row);
+
+  const modules = (row.modules ?? [])
+    .map((moduleRow) => ({
+      ...mapModule(moduleRow),
+      lessonCount: moduleRow.lessons?.length ?? 0,
+    }))
+    .sort((a, b) => a.order - b.order);
+
+  return { ...course, modules };
+}
 
 function mapLessonWithNested(row: LessonRow): Lesson {
   const lesson = mapLesson(row);
@@ -202,9 +224,11 @@ export async function getPublishedCourses(): Promise<Course[]> {
 
     if (error) throw error;
 
-    return (data ?? []).map(mapCourse);
+    return prepareCoursesForCatalog((data ?? []).map(mapCourse));
   } catch (error) {
-    return handleQueryError("getPublishedCourses", error, getFixtureCourses);
+    return handleQueryError("getPublishedCourses", error, () =>
+      prepareCoursesForCatalog(getFixtureCourses()),
+    );
   }
 }
 
@@ -228,6 +252,43 @@ export async function getCourseBySlug(slug: string): Promise<Course | null> {
   } catch (error) {
     return handleQueryError("getCourseBySlug", error, () =>
       getFixtureCourseBySlug(slug),
+    );
+  }
+}
+
+export async function getCoursePreviewBySlug(slug: string): Promise<CoursePreview | null> {
+  if (!hasSupabaseConfig()) {
+    if (!shouldUseLocalDataFallback()) {
+      console.error(
+        `[getCoursePreviewBySlug] Supabase env vars are not present in this deployment. ${supabaseHostHint()}.`,
+      );
+      return null;
+    }
+    return getFixtureCoursePreviewBySlug(slug);
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("courses")
+      .select(PREVIEW_SELECT)
+      .eq("slug", slug)
+      .eq("is_published", true)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    if (!data) {
+      console.warn(
+        `[getCoursePreviewBySlug] No published course found for slug="${slug}" (${supabaseHostHint()}).`,
+      );
+      return null;
+    }
+
+    return mapCoursePreview(data as PreviewRow);
+  } catch (error) {
+    return handleQueryError("getCoursePreviewBySlug", error, () =>
+      getFixtureCoursePreviewBySlug(slug),
     );
   }
 }

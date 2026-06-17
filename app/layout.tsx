@@ -37,12 +37,13 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${lato.variable} ${cormorant.variable} h-full antialiased`}
+      className={`academy-theme ${lato.variable} ${cormorant.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col">
+      <body className="relative flex min-h-full flex-col">
+        <div aria-hidden className="pointer-events-none fixed inset-0 grain-overlay" />
         <ClerkProvider {...CLERK_PROVIDER_PROPS}>
           <SiteHeader />
-          <main className="flex flex-1 flex-col">{children}</main>
+          <main className="relative z-10 flex flex-1 flex-col">{children}</main>
           <SiteFooter />
         </ClerkProvider>
       </body>

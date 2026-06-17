@@ -1,11 +1,11 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { syncCurrentUserProfile } from "@/lib/actions/users";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
 import { mapCourse, mapEnrollment } from "@/lib/supabase/mappers";
 import { resolveSafeDefault } from "@/lib/supabase/errors";
 import { calculateProgressPercent, getCurriculumItemIds } from "@/lib/courses/utils";
@@ -19,12 +19,14 @@ import type {
 
 export async function getUserEnrollments(): Promise<EnrollmentWithCourse[]> {
   const { userId } = await auth();
-  if (!userId || !hasSupabaseConfig()) {
+  if (!userId || !hasSupabaseAdminConfig()) {
     return [];
   }
 
+  await syncCurrentUserProfile();
+
   try {
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     const { data, error } = await supabase
       .from("enrollments")
       .select("*, courses (*)")
@@ -44,12 +46,14 @@ export async function getUserEnrollments(): Promise<EnrollmentWithCourse[]> {
 
 export async function isUserEnrolledInCourse(courseId: string): Promise<boolean> {
   const { userId } = await auth();
-  if (!userId || !hasSupabaseConfig()) {
+  if (!userId || !hasSupabaseAdminConfig()) {
     return false;
   }
 
+  await syncCurrentUserProfile();
+
   try {
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     const { data, error } = await supabase
       .from("enrollments")
       .select("id")
@@ -63,6 +67,99 @@ export async function isUserEnrolledInCourse(courseId: string): Promise<boolean>
   } catch (error) {
     return resolveSafeDefault("isUserEnrolledInCourse", error, false);
   }
+}
+
+function revalidateCoursePaths(slug: string) {
+  revalidatePath("/dashboard");
+  revalidatePath("/my-courses");
+  revalidatePath(`/courses/${slug}`);
+  revalidatePath(`/my-courses/${slug}`);
+}
+
+/**
+ * Server guard for protected learn routes. Redirects to the public preview
+ * when the signed-in user is not enrolled.
+ */
+export async function requireEnrollmentForSlug(slug: string): Promise<void> {
+  const { getCourseBySlug } = await import("@/lib/actions/courses");
+  const course = await getCourseBySlug(slug);
+
+  if (!course) {
+    redirect("/courses");
+  }
+
+  const enrolled = await isUserEnrolledInCourse(course.id);
+  if (enrolled) {
+    return;
+  }
+
+  const { userId } = await auth();
+  const { hasSupabaseConfig, shouldUseLocalDataFallback } = await import("@/lib/env");
+  const { isFixtureData } = await import("@/lib/courses/fixtures");
+
+  if (
+    userId &&
+    shouldUseLocalDataFallback() &&
+    !hasSupabaseConfig() &&
+    isFixtureData(course)
+  ) {
+    return;
+  }
+
+  redirect(`/courses/${slug}`);
+}
+
+/**
+ * Creates or confirms an enrollment row. Used by free enroll, Stripe webhooks,
+ * and the enroll route after successful payment.
+ */
+export async function grantCourseEnrollment(
+  userId: string,
+  courseId: string,
+  options?: { email?: string | null },
+): Promise<{ success: boolean; error?: string; slug?: string }> {
+  if (!hasSupabaseAdminConfig()) {
+    return { success: false, error: "Enrollment is not available right now." };
+  }
+
+  const supabase = createAdminClient();
+
+  await supabase.from("profiles").upsert(
+    {
+      id: userId,
+      email: options?.email ?? null,
+    },
+    { onConflict: "id" },
+  );
+
+  const { data: course, error: courseError } = await supabase
+    .from("courses")
+    .select("id, slug, is_published")
+    .eq("id", courseId)
+    .eq("is_published", true)
+    .maybeSingle();
+
+  if (courseError || !course) {
+    return { success: false, error: "Program not found." };
+  }
+
+  const { error } = await supabase.from("enrollments").upsert(
+    {
+      user_id: userId,
+      course_id: courseId,
+      progress_percent: 0,
+    },
+    { onConflict: "user_id,course_id", ignoreDuplicates: true },
+  );
+
+  if (error) {
+    console.error("grantCourseEnrollment:", error.message);
+    return { success: false, error: "Could not complete enrollment." };
+  }
+
+  revalidateCoursePaths(course.slug);
+
+  return { success: true, slug: course.slug };
 }
 
 export async function enrollInCourse(
@@ -93,41 +190,28 @@ export async function enrollInCourse(
   }
 
   if (course.price > 0) {
-    return { success: false, error: "Paid programs will be available soon." };
+    return { success: false, error: "Complete payment to enroll in this program." };
   }
 
-  const { error } = await supabase.from("enrollments").upsert(
-    {
-      user_id: userId,
-      course_id: courseId,
-      progress_percent: 0,
-    },
-    { onConflict: "user_id,course_id", ignoreDuplicates: true },
-  );
+  const user = await currentUser();
 
-  if (error) {
-    console.error("enrollInCourse:", error.message);
-    return { success: false, error: "Could not complete enrollment." };
-  }
-
-  revalidatePath("/dashboard");
-  revalidatePath(`/courses/${course.slug}`);
-
-  return { success: true };
+  return grantCourseEnrollment(userId, courseId, {
+    email: user?.primaryEmailAddress?.emailAddress ?? null,
+  });
 }
 
 export async function getCourseItemProgress(
   course: CourseWithCurriculum,
 ): Promise<ItemProgressState> {
   const { userId } = await auth();
-  if (!userId || !hasSupabaseConfig()) {
+  if (!userId || !hasSupabaseAdminConfig()) {
     return { lessonIds: [], assignmentIds: [], quizIds: [] };
   }
 
   const itemIds = getCurriculumItemIds(course);
 
   try {
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     const [lessonsResult, assignmentsResult, quizzesResult] = await Promise.all([
       itemIds.lessonIds.length > 0
@@ -219,8 +303,7 @@ export async function markCurriculumItemComplete(
 
   await updateEnrollmentProgress(userId, courseSlug);
 
-  revalidatePath("/dashboard");
-  revalidatePath(`/courses/${courseSlug}`);
+  revalidateCoursePaths(courseSlug);
 
   return { success: true };
 }

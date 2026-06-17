@@ -9,7 +9,7 @@ type AssignmentsSectionProps = {
   course: CourseWithCurriculum;
 };
 
-const FILE_TYPE_LABELS: Record<Assignment["fileType"], string> = {
+const FILE_TYPE_LABELS: Record<NonNullable<Assignment["fileType"]>, string> = {
   pdf: "PDF",
   doc: "Word Document",
   docx: "Word Document",
@@ -47,9 +47,11 @@ export function AssignmentsSection({ course }: AssignmentsSectionProps) {
                   <FileText className="mt-0.5 size-5 shrink-0 text-brand-gold" />
                   <div className="min-w-0 flex-1">
                     <h3 className="font-heading text-lg font-light">{assignment.title}</h3>
-                    <p className="mt-1 text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                      {FILE_TYPE_LABELS[assignment.fileType]}
-                    </p>
+                    {assignment.fileType && (
+                      <p className="mt-1 text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                        {FILE_TYPE_LABELS[assignment.fileType]}
+                      </p>
+                    )}
                     {assignment.description && (
                       <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                         {assignment.description}
@@ -57,17 +59,19 @@ export function AssignmentsSection({ course }: AssignmentsSectionProps) {
                     )}
                   </div>
                 </div>
-                <Button
-                  variant="outline"
-                  className="mt-6 w-full border-brand-navy/20"
-                  nativeButton={false}
-                  render={
-                    <a href={assignment.fileUrl} target="_blank" rel="noopener noreferrer" />
-                  }
-                >
-                  <Download className="size-4" />
-                  Download
-                </Button>
+                {assignment.fileUrl && (
+                  <Button
+                    variant="outline"
+                    className="mt-6 w-full border-brand-navy/20"
+                    nativeButton={false}
+                    render={
+                      <a href={assignment.fileUrl} target="_blank" rel="noopener noreferrer" />
+                    }
+                  >
+                    <Download className="size-4" />
+                    Download
+                  </Button>
+                )}
               </BrandCard>
             </li>
           ))}

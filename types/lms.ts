@@ -8,10 +8,20 @@ export type Profile = {
   updatedAt: string;
 };
 
+export type Testimonial = {
+  name: string;
+  role: string | null;
+  quote: string;
+  rating: number | null;
+  initials?: string | null;
+  date?: string | null;
+};
+
 export type Course = {
   id: string;
   title: string;
   description: string | null;
+  tagline: string | null;
   slug: string;
   thumbnailUrl: string | null;
   heroVideoUrl: string | null;
@@ -21,6 +31,8 @@ export type Course = {
   ratingCount: number;
   enrolledCount: number;
   whatYouWillLearn: string[];
+  whoThisIsFor: string[];
+  testimonials: Testimonial[];
   tags: string[];
   price: number;
   isPublished: boolean;
@@ -57,12 +69,19 @@ export type Lesson = {
 
 export type AssignmentFileType = "pdf" | "doc" | "docx";
 
+export type AssignmentResource = {
+  title: string;
+  fileUrl: string;
+  fileType: AssignmentFileType;
+};
+
 export type Assignment = {
   id: string;
   title: string;
   description: string | null;
-  fileUrl: string;
-  fileType: AssignmentFileType;
+  fileUrl: string | null;
+  fileType: AssignmentFileType | null;
+  resourceFiles: AssignmentResource[];
   lessonId: string | null;
   moduleId: string | null;
   createdAt: string;
@@ -149,6 +168,15 @@ export type ModuleWithLessons = Module & {
 
 export type CourseWithCurriculum = Course & {
   modules: ModuleWithLessons[];
+};
+
+/** Module summary for public preview pages (no lesson content). */
+export type ModulePreview = Module & {
+  lessonCount: number;
+};
+
+export type CoursePreview = Course & {
+  modules: ModulePreview[];
 };
 
 export type EnrollmentWithCourse = Enrollment & {

@@ -7,7 +7,12 @@ type PageShellProps = {
 
 export function PageShell({ children, className }: PageShellProps) {
   return (
-    <div className={cn("mx-auto w-full max-w-7xl px-6 py-12 sm:py-16 lg:py-20", className)}>
+    <div
+      className={cn(
+        "mx-auto w-full max-w-7xl px-6 py-16 sm:px-8 sm:py-20 lg:px-10 lg:py-24",
+        className,
+      )}
+    >
       {children}
     </div>
   );
@@ -50,7 +55,7 @@ export function SectionHeading({
         {title}
       </h2>
       {description && (
-        <p className="mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
+        <p className="mt-4 text-base leading-relaxed text-brand-warm sm:text-lg">
           {description}
         </p>
       )}
@@ -67,7 +72,7 @@ export function BrandCard({ children, className }: BrandCardProps) {
   return (
     <article
       className={cn(
-        "rounded-sm border border-border/80 bg-card p-8 shadow-[0_18px_50px_-30px_rgba(14,26,58,0.25)] transition-shadow duration-300 hover:shadow-[0_24px_60px_-28px_rgba(14,26,58,0.3)]",
+        "academy-card p-8 transition-all duration-300 hover:border-brand-teal/25",
         className,
       )}
     >

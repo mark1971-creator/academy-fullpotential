@@ -4,14 +4,26 @@ import Link from "next/link";
 import { unstable_rethrow } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-function SignedOutActions() {
+type AuthActionsProps = {
+  variant?: "chrome" | "dark";
+};
+
+function SignedOutActions({ variant = "chrome" }: AuthActionsProps) {
+  const isChrome = variant === "chrome";
+
   return (
     <div className="flex items-center gap-2">
       <Button
         variant="ghost"
         size="sm"
-        className="uppercase tracking-[0.14em] text-foreground/70"
+        className={cn(
+          "uppercase tracking-[0.14em]",
+          isChrome
+            ? "text-brand-chrome-muted hover:bg-slate-100 hover:text-brand-chrome-foreground"
+            : "text-brand-warm hover:bg-white/5 hover:text-foreground",
+        )}
         nativeButton={false}
         render={<Link href="/sign-in" />}
       >
@@ -29,31 +41,26 @@ function SignedOutActions() {
   );
 }
 
-export async function AuthActions() {
-  // Resolve the session on the server. If Clerk can't be reached (e.g. transient
-  // network/middleware error), fall back to the signed-out actions rather than
-  // throwing and tripping the route's error boundary.
+export async function AuthActions({ variant = "chrome" }: AuthActionsProps) {
   let userId: string | null = null;
 
   try {
     ({ userId } = await auth());
   } catch (error) {
-    // Let Next.js internal control-flow signals (dynamic rendering, redirect,
-    // notFound) propagate; only swallow genuine Clerk/session failures.
     unstable_rethrow(error);
     console.error("AuthActions: failed to resolve Clerk session", error);
     userId = null;
   }
 
   if (!userId) {
-    return <SignedOutActions />;
+    return <SignedOutActions variant={variant} />;
   }
 
   return (
     <UserButton
       appearance={{
         elements: {
-          avatarBox: "size-9 ring-1 ring-brand-gold/30",
+          avatarBox: "size-9 ring-1 ring-brand-blue/25",
         },
       }}
     />

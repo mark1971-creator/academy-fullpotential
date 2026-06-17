@@ -1,5 +1,6 @@
 import type {
   Assignment,
+  Course,
   CourseWithCurriculum,
   CurriculumItem,
   ItemProgressState,
@@ -57,11 +58,22 @@ export function getFirstVideoLesson(course: CourseWithCurriculum): Lesson | null
   return null;
 }
 
-export function getHeroVideoUrl(course: CourseWithCurriculum): string | null {
+export function getHeroVideoUrl(
+  course:
+    | Pick<CourseWithCurriculum, "heroVideoUrl" | "modules">
+    | Pick<Course, "heroVideoUrl">,
+): string | null {
   if (course.heroVideoUrl && !course.heroVideoUrl.includes("[")) {
     return course.heroVideoUrl;
   }
-  return getFirstVideoLesson(course)?.youtubeUrl ?? null;
+  if ("modules" in course && course.modules.length > 0 && "lessons" in course.modules[0]) {
+    return getFirstVideoLesson(course as CourseWithCurriculum)?.youtubeUrl ?? null;
+  }
+  return null;
+}
+
+export function getPreviewLessonCount(course: { modules: Array<{ lessonCount: number }> }) {
+  return course.modules.reduce((total, module) => total + module.lessonCount, 0);
 }
 
 export function calculateLessonProgressPercent(
@@ -111,7 +123,7 @@ export function getModuleCurriculumItems(module: ModuleWithLessons): CurriculumI
         id: assignment.id,
         title: assignment.title,
         moduleId: module.id,
-        fileType: assignment.fileType,
+        fileType: assignment.fileType ?? undefined,
       });
     }
 
@@ -132,7 +144,7 @@ export function getModuleCurriculumItems(module: ModuleWithLessons): CurriculumI
       id: assignment.id,
       title: assignment.title,
       moduleId: module.id,
-      fileType: assignment.fileType,
+      fileType: assignment.fileType ?? undefined,
     });
   }
 
@@ -237,9 +249,24 @@ export function findQuiz(course: CourseWithCurriculum, quizId: string): Quiz | n
 export function getFirstCurriculumItem(course: CourseWithCurriculum): CurriculumItem | null {
   for (const module of course.modules) {
     const items = getModuleCurriculumItems(module);
-    if (items.length > 0) {
-      return items[0];
-    }
+    const lesson = items.find((item) => item.type === "lesson");
+    if (lesson) return lesson;
+  }
+
+  for (const module of course.modules) {
+    const items = getModuleCurriculumItems(module);
+    const assignment = items.find((item) => item.type === "assignment");
+    if (assignment) return assignment;
+  }
+
+  return null;
+}
+
+export function toSelectedCurriculumItem(
+  item: CurriculumItem | null,
+): { type: "lesson" | "assignment"; id: string } | null {
+  if (item?.type === "lesson" || item?.type === "assignment") {
+    return { type: item.type, id: item.id };
   }
   return null;
 }

@@ -1,29 +1,28 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import {
-  CheckCircle2,
-  ChevronDown,
-  FileText,
-  FolderOpen,
-  ListVideo,
-} from "lucide-react";
+import { CheckCircle2, ChevronDown, ListVideo } from "lucide-react";
 
-import { CurriculumSidebar } from "@/components/course/CurriculumSidebar";
+import { AssignmentContent } from "@/components/course/AssignmentContent";
+import {
+  CurriculumSidebar,
+  type SelectedCurriculumItem,
+} from "@/components/course/CurriculumSidebar";
 import { YouTubePlayer } from "@/components/courses/youtube-player";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { markCurriculumItemComplete } from "@/lib/actions/enrollments";
 import {
-  calculateLessonProgressPercent,
+  calculateProgressPercent,
+  findAssignment,
   findLesson,
   formatLessonDuration,
-  getFirstLesson,
+  getFirstCurriculumItem,
+  toSelectedCurriculumItem,
 } from "@/lib/courses/utils";
 import { cn } from "@/lib/utils";
-import type { CourseWithCurriculum, ItemProgressState, Lesson } from "@/types/lms";
+import type { CourseWithCurriculum, ItemProgressState } from "@/types/lms";
 
 type CoursePlayerProps = {
   course: CourseWithCurriculum;
@@ -32,97 +31,109 @@ type CoursePlayerProps = {
 };
 
 export function CoursePlayer({ course, progress, isEnrolled }: CoursePlayerProps) {
-  const firstLesson = useMemo(() => getFirstLesson(course), [course]);
-  const [selectedLessonId, setSelectedLessonId] = useState<string | null>(
-    firstLesson?.id ?? null,
-  );
+  const firstItem = useMemo(() => toSelectedCurriculumItem(getFirstCurriculumItem(course)), [course]);
+  const [selected, setSelected] = useState<SelectedCurriculumItem | null>(firstItem);
   const [mobileCurriculumOpen, setMobileCurriculumOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  const selectedLesson = selectedLessonId
-    ? findLesson(course, selectedLessonId)
-    : firstLesson;
+  const selectedLesson =
+    selected?.type === "lesson" ? findLesson(course, selected.id) : null;
+  const selectedAssignment =
+    selected?.type === "assignment" ? findAssignment(course, selected.id) : null;
 
-  const progressPercent = calculateLessonProgressPercent(course, progress);
-  const completedLessons = progress.lessonIds.length;
-  const totalLessons = course.modules.reduce((n, m) => n + m.lessons.length, 0);
+  const progressPercent = calculateProgressPercent(course, progress);
+  const completedItems =
+    progress.lessonIds.length + progress.assignmentIds.length + progress.quizIds.length;
+  const totalItems = course.modules.reduce(
+    (count, module) =>
+      count +
+      module.lessons.length +
+      module.assignments.length +
+      module.quizzes.length +
+      module.lessons.reduce((n, l) => n + l.assignments.length + l.quizzes.length, 0),
+    0,
+  );
 
-  function handleSelectLesson(lesson: Lesson) {
-    setSelectedLessonId(lesson.id);
+  function handleSelect(item: SelectedCurriculumItem) {
+    setSelected(item);
     setMobileCurriculumOpen(false);
   }
 
-  function handleMarkComplete() {
-    if (!selectedLesson || !isEnrolled) return;
+  function handleMarkComplete(type: "lesson" | "assignment", id: string) {
+    if (!isEnrolled) return;
 
     startTransition(async () => {
-      await markCurriculumItemComplete("lesson", selectedLesson.id, course.slug);
+      await markCurriculumItemComplete(type, id, course.slug);
     });
   }
 
   const isLessonComplete =
-    selectedLesson != null &&
-    progress.lessonIds.includes(selectedLesson.id);
+    selectedLesson != null && progress.lessonIds.includes(selectedLesson.id);
+  const isAssignmentComplete =
+    selectedAssignment != null &&
+    progress.assignmentIds.includes(selectedAssignment.id);
 
   return (
-    <div className="space-y-6">
-      <Card className="border-brand-teal/15 bg-gradient-to-r from-brand-teal/[0.06] to-brand-gold/[0.06]">
-        <CardContent className="p-5 sm:p-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-medium text-brand-navy">Your progress</p>
-                {isEnrolled && (
-                  <Badge variant="gold" className="font-normal">
-                    {completedLessons} of {totalLessons} lessons
-                  </Badge>
-                )}
-              </div>
-              <div className="mt-3 flex items-center gap-4">
-                <Progress value={progressPercent} className="h-2.5 flex-1" />
-                <span className="text-lg font-semibold tabular-nums text-brand-teal">
-                  {progressPercent}%
-                </span>
-              </div>
+    <div className="space-y-8">
+      <div className="academy-learn-surface p-6 sm:p-8">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="text-sm font-semibold text-foreground">Your progress</p>
+              {isEnrolled && totalItems > 0 && (
+                <Badge className="border-transparent bg-brand-teal/20 font-medium text-brand-teal">
+                  {completedItems} of {totalItems} items
+                </Badge>
+              )}
             </div>
-            {!isEnrolled && (
-              <p className="text-sm text-muted-foreground">
-                Enroll to track your progress through the certification.
-              </p>
-            )}
+            <div className="mt-4 flex items-center gap-4">
+              <Progress
+                value={progressPercent}
+                className="h-3 flex-1 bg-muted/80"
+                indicatorClassName="from-brand-teal to-brand-gold"
+              />
+              <span className="text-xl font-semibold tabular-nums text-brand-gold">
+                {progressPercent}%
+              </span>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+          {!isEnrolled && (
+            <p className="text-sm text-brand-warm">
+              Enroll to track your progress through the certification.
+            </p>
+          )}
+        </div>
+      </div>
 
       <button
         type="button"
-        className="flex w-full items-center justify-between rounded-xl border border-border/70 bg-card px-4 py-3.5 text-left shadow-sm lg:hidden"
+        className="flex w-full items-center justify-between rounded-xl border border-sidebar-border bg-brand-sidebar px-5 py-4 text-left shadow-sm lg:hidden"
         onClick={() => setMobileCurriculumOpen((open) => !open)}
       >
-        <span className="flex items-center gap-2 text-sm font-medium text-brand-navy">
+        <span className="flex items-center gap-2.5 text-sm font-medium text-foreground">
           <ListVideo className="size-4 text-brand-teal" />
           Browse curriculum
         </span>
         <ChevronDown
           className={cn(
-            "size-4 text-muted-foreground transition-transform",
+            "size-4 text-brand-warm transition-transform",
             mobileCurriculumOpen && "rotate-180",
           )}
         />
       </button>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)] lg:items-start">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] lg:items-start">
         <div
           className={cn(
-            "lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto",
+            "lg:sticky lg:top-28 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto",
             mobileCurriculumOpen ? "block" : "hidden lg:block",
           )}
         >
           <CurriculumSidebar
             course={course}
             progress={progress}
-            selectedLessonId={selectedLessonId}
-            onSelectLesson={handleSelectLesson}
+            selected={selected}
+            onSelect={handleSelect}
           />
         </div>
 
@@ -133,17 +144,25 @@ export function CoursePlayer({ course, progress, isEnrolled }: CoursePlayerProps
               isEnrolled={isEnrolled}
               isComplete={isLessonComplete}
               isPending={isPending}
-              onMarkComplete={handleMarkComplete}
+              onMarkComplete={() => handleMarkComplete("lesson", selectedLesson.id)}
+            />
+          ) : selectedAssignment ? (
+            <AssignmentContent
+              assignment={selectedAssignment}
+              isEnrolled={isEnrolled}
+              isComplete={isAssignmentComplete}
+              isPending={isPending}
+              onMarkComplete={() =>
+                handleMarkComplete("assignment", selectedAssignment.id)
+              }
             />
           ) : (
-            <Card className="border-dashed">
-              <CardContent className="flex flex-col items-center py-16 text-center">
-                <ListVideo className="size-10 text-brand-teal/50" />
-                <p className="mt-4 text-sm text-muted-foreground">
-                  Select a lesson from the curriculum to begin.
-                </p>
-              </CardContent>
-            </Card>
+            <div className="academy-learn-surface flex flex-col items-center border-dashed py-20 text-center">
+              <ListVideo className="size-10 text-brand-teal/60" />
+              <p className="mt-4 text-base text-brand-warm">
+                Select a lesson or assignment from the curriculum to begin.
+              </p>
+            </div>
           )}
         </div>
       </div>
@@ -152,7 +171,7 @@ export function CoursePlayer({ course, progress, isEnrolled }: CoursePlayerProps
 }
 
 type LessonContentProps = {
-  lesson: Lesson;
+  lesson: NonNullable<ReturnType<typeof findLesson>>;
   isEnrolled: boolean;
   isComplete: boolean;
   isPending: boolean;
@@ -170,27 +189,29 @@ function LessonContent({
   const duration = formatLessonDuration(lesson);
 
   return (
-    <Card className="overflow-hidden border-border/70 shadow-md">
-      <CardHeader className="border-b border-border/50 bg-card">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
+    <article className="academy-learn-surface overflow-hidden">
+      <header className="border-b border-border px-6 py-7 sm:px-8 sm:py-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0 flex-1">
             <Badge
               variant={isVideo ? "default" : "outline"}
               className={cn(
-                "mb-3",
-                isVideo ? "bg-brand-teal" : "border-brand-teal/30 text-brand-teal",
+                "mb-4",
+                isVideo
+                  ? "bg-brand-teal text-brand-charcoal"
+                  : "border-brand-teal/40 text-brand-teal",
               )}
             >
               {isVideo ? "Video lesson" : "Resource"}
             </Badge>
-            <CardTitle className="text-2xl text-brand-navy sm:text-3xl">
+            <h2 className="font-heading text-2xl font-light text-foreground sm:text-3xl">
               {lesson.title}
-            </CardTitle>
+            </h2>
             {duration && (
-              <p className="mt-2 text-sm text-muted-foreground">Duration: {duration}</p>
+              <p className="mt-3 text-sm text-brand-warm">Duration: {duration}</p>
             )}
             {lesson.content && (
-              <p className="mt-4 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+              <p className="mt-5 max-w-3xl text-base leading-relaxed text-brand-warm">
                 {lesson.content}
               </p>
             )}
@@ -199,8 +220,11 @@ function LessonContent({
           {isEnrolled && (
             <Button
               variant={isComplete ? "outline" : "gold"}
-              size="sm"
-              className="shrink-0"
+              size="lg"
+              className={cn(
+                "shrink-0 uppercase tracking-[0.12em]",
+                !isComplete && "min-w-[11rem] shadow-[0_8px_28px_-8px_rgb(250_204_21_/_0.55)]",
+              )}
               disabled={isComplete || isPending}
               onClick={onMarkComplete}
             >
@@ -215,9 +239,9 @@ function LessonContent({
             </Button>
           )}
         </div>
-      </CardHeader>
+      </header>
 
-      <CardContent className="p-0 sm:p-0">
+      <div>
         {isVideo ? (
           <YouTubePlayer
             url={lesson.youtubeUrl}
@@ -225,24 +249,14 @@ function LessonContent({
             className="rounded-none"
           />
         ) : (
-          <div className="flex items-start gap-4 p-6 sm:p-8">
-            <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand-teal/10 text-brand-teal">
-              {lesson.title.toLowerCase().includes("check") ? (
-                <FileText className="size-6" />
-              ) : (
-                <FolderOpen className="size-6" />
-              )}
-            </span>
-            <div>
-              <p className="font-medium text-brand-navy">Program resource</p>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                {lesson.content ??
-                  "This resource is provided as part of your certification. Contact your program coordinator for access."}
-              </p>
-            </div>
+          <div className="flex items-start gap-5 px-6 py-8 sm:px-8 sm:py-10">
+            <p className="text-base leading-relaxed text-brand-warm">
+              {lesson.content ??
+                "This resource is provided as part of your certification."}
+            </p>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </article>
   );
 }

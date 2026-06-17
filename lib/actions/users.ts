@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { mapProfile } from "@/lib/supabase/mappers";
 import { resolveSafeDefault } from "@/lib/supabase/errors";
 import { hasSupabaseAdminConfig } from "@/lib/env";
+import { claimLegacyEnrollmentsForUser } from "@/lib/legacy-enrollments";
 import type { Profile } from "@/types/lms";
 
 /**
@@ -26,12 +27,16 @@ export async function syncCurrentUserProfile(): Promise<Profile | null> {
     }
 
     const supabase = createAdminClient();
+    const emails = user.emailAddresses
+      .map((address) => address.emailAddress)
+      .filter((email): email is string => Boolean(email));
+
     const { data, error } = await supabase
       .from("profiles")
       .upsert(
         {
           id: userId,
-          email: user.primaryEmailAddress?.emailAddress ?? null,
+          email: user.primaryEmailAddress?.emailAddress ?? emails[0] ?? null,
           first_name: user.firstName,
           last_name: user.lastName,
           avatar_url: user.imageUrl,
@@ -42,6 +47,8 @@ export async function syncCurrentUserProfile(): Promise<Profile | null> {
       .single();
 
     if (error) throw error;
+
+    await claimLegacyEnrollmentsForUser(supabase, userId, emails);
 
     return mapProfile(data);
   } catch (error) {

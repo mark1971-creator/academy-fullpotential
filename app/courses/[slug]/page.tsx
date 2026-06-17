@@ -1,25 +1,24 @@
 import { auth } from "@clerk/nextjs/server";
 import { notFound } from "next/navigation";
 
-import { CourseHero } from "@/components/course/CourseHero";
-import { CoursePlayer } from "@/components/course/CoursePlayer";
+import { CoursePreviewLayout } from "@/components/course-preview/course-preview";
+import { EnrollStatusBanner } from "@/components/course-preview/enroll-status-banner";
 import { FallbackDataBanner } from "@/components/dev/fallback-data-banner";
 import { PageShell } from "@/components/ui/brand-elements";
-import { getCourseWithCurriculumBySlug } from "@/lib/actions/courses";
-import {
-  getCourseItemProgress,
-  isUserEnrolledInCourse,
-} from "@/lib/actions/enrollments";
+import { getCoursePreviewBySlug } from "@/lib/actions/courses";
+import { isUserEnrolledInCourse } from "@/lib/actions/enrollments";
 import { isFixtureData } from "@/lib/courses/fixtures";
-import { getHeroVideoUrl } from "@/lib/courses/utils";
+import { HPCC_TESTIMONIALS } from "@/lib/courses/hpcc-testimonials";
+import { getHeroVideoUrl, getPreviewLessonCount } from "@/lib/courses/utils";
 
-type CourseDetailPageProps = {
+type CoursePreviewPageProps = {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ payment?: string; enroll_error?: string }>;
 };
 
-export async function generateMetadata({ params }: CourseDetailPageProps) {
+export async function generateMetadata({ params }: CoursePreviewPageProps) {
   const { slug } = await params;
-  const course = await getCourseWithCurriculumBySlug(slug);
+  const course = await getCoursePreviewBySlug(slug);
 
   if (!course) {
     return { title: "Program not found" };
@@ -28,65 +27,52 @@ export async function generateMetadata({ params }: CourseDetailPageProps) {
   return {
     title: course.title,
     description:
-      course.description ?? `Explore ${course.title} at Full Potential Academy.`,
+      course.tagline ??
+      course.description ??
+      `Explore ${course.title} at Full Potential Academy.`,
   };
 }
 
-export default async function CourseDetailPage({ params }: CourseDetailPageProps) {
+export default async function CoursePreviewPage({
+  params,
+  searchParams,
+}: CoursePreviewPageProps) {
   const { slug } = await params;
+  const { payment, enroll_error: enrollError } = await searchParams;
 
-  const course = await getCourseWithCurriculumBySlug(slug);
+  const course = await getCoursePreviewBySlug(slug);
 
   if (!course) {
     notFound();
   }
 
-  // Auth and enrollment are non-critical for rendering the page. If Clerk or the
-  // enrollment lookups fail, degrade gracefully to a signed-out, not-enrolled view
-  // instead of crashing the whole route into the error boundary.
   const { userId } = await auth().catch(() => ({ userId: null as string | null }));
 
-  const [isEnrolled, progress] = await Promise.all([
-    isUserEnrolledInCourse(course.id).catch(() => false),
-    getCourseItemProgress(course).catch(() => ({
-      lessonIds: [] as string[],
-      assignmentIds: [] as string[],
-      quizIds: [] as string[],
-    })),
-  ]);
+  const isEnrolled = userId
+    ? await isUserEnrolledInCourse(course.id).catch(() => false)
+    : false;
 
-  const lessonCount = course.modules.reduce(
-    (total, module) => total + module.lessons.length,
-    0,
-  );
-
+  const lessonCount = getPreviewLessonCount(course);
   const heroVideoUrl = getHeroVideoUrl(course);
   const usingFallbackData = isFixtureData(course);
+  const testimonials =
+    course.slug === "human-potential-coach-certification" &&
+    course.testimonials.length === 0
+      ? HPCC_TESTIMONIALS
+      : course.testimonials;
 
   return (
     <PageShell className="max-w-[1400px]">
       {usingFallbackData && <FallbackDataBanner />}
 
-      <CourseHero
-        course={course}
+      <EnrollStatusBanner payment={payment} enrollError={enrollError} />
+
+      <CoursePreviewLayout
+        course={{ ...course, testimonials }}
         lessonCount={lessonCount}
         heroVideoUrl={heroVideoUrl}
         isEnrolled={isEnrolled}
-        isSignedIn={Boolean(userId)}
       />
-
-      <section className="mt-10 lg:mt-14">
-        <div className="mb-6">
-          <h2 className="font-heading text-2xl font-light text-brand-navy sm:text-3xl">
-            Start learning
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Work through each module at your own pace. Your progress is saved as you
-            complete lessons.
-          </p>
-        </div>
-        <CoursePlayer course={course} progress={progress} isEnrolled={isEnrolled} />
-      </section>
     </PageShell>
   );
 }

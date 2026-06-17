@@ -1,7 +1,5 @@
-// Seeds the course record + the 11 modules (full metadata, real titles) via the
-// service-role API. Run BEFORE seed_lessons.mjs. Idempotent: upserts the course
-// and recreates the modules. We use the API because the Supabase SQL editor
-// mangles the word "the" in string literals.
+// Seeds all course records + module titles via the service-role API.
+// Run BEFORE seed_lessons.mjs (HPCC lessons only for now). Idempotent per course.
 //
 // Run from the project root:   node supabase/seed_course_meta.mjs
 
@@ -10,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { createClient } from "@supabase/supabase-js";
 
-const COURSE_SLUG = "human-potential-coach-certification";
+import { SEED_COURSES } from "./seed-data/courses.mjs";
 
 function loadEnv() {
   const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -23,52 +21,82 @@ function loadEnv() {
   return env;
 }
 
-const COURSE = {
-  slug: COURSE_SLUG,
-  image_url: null,
-  hero_video_url: null,
-  title: "Certification - Human Potential Development Coach Training",
-  description:
-    "Welcome and thank you for enrolling for this certification training. If you work with leaders, teams & organizations you will probably agree that much of our Human Potential remains dormant or unexpressed in the work environment. This program equips you to debrief assessments, build business cases for human potential development, and guide transformational client work.",
-  price: 995.0,
-  is_published: true,
-  duration_label: "24 hours",
-  level: "Expert",
-  rating: 5.0,
-  rating_count: 10,
-  enrolled_count: 86,
-  what_you_will_learn: [
-    "Debrief the Human Potential assessment with your clients",
-    "Clearly demonstrate how a greater focus on HUMAN POTENTIAL REALIZATION drives key business metrics such as: employee engagement, trustworthiness & innovation",
-    "Offer very concrete tools and methodologies that bring more objectivity to the subjective nature of human beings",
-    "Make a robust business case for HUMAN POTENTIAL DEVELOPMENT and expand your effectiveness in OD work",
-    "Inspire your clients to bring more focus and attention on the HUMAN DIMENSION in their organizations",
-    "Gain insights that will allow you to access even more of your human potential and grow into your next stage of personal development in life",
-  ],
-  tags: [
-    "Coaching",
-    "Conscious Culture",
-    "Human Potential",
-    "Leadership development",
-    "Organizational development",
-    "Personal development",
-  ],
-};
+const PREVIEW_ONLY_COLUMNS = ["tagline", "who_this_is_for", "testimonials"];
 
-// [sort_order, title]
-const MODULE_TITLES = [
-  [1, "Module 1: Authentic introductions"],
-  [2, "Module 2: Context for Human Potential interventions"],
-  [3, "Module 3: The Human Potential Iceberg"],
-  [4, "Module 4: Using the 6 OPM's to build bridges into the client's reality"],
-  [5, "Module 5: Understanding the Human Potential House"],
-  [6, "Module 6: Using the 4 States and 23 Dimensions to uncover deeper insight into the client's reality"],
-  [7, "Module 7: The 8 Being Attitudes"],
-  [8, "Module 8: Consciousness Maturity Index"],
-  [9, "Module 9: Additional findings"],
-  [10, "Module 10: Debriefing clients on their full report"],
-  [11, "Module 11: Closing, next steps & certification"],
-];
+async function upsertCourse(db, course) {
+  let payload = { ...course };
+  let { data, error } = await db
+    .from("courses")
+    .upsert(payload, { onConflict: "slug" })
+    .select("id, slug, title, is_published")
+    .single();
+
+  if (error?.message?.includes("tagline")) {
+    console.warn(
+      "Preview columns missing — run supabase/migrations/20250617000000_course_preview_fields.sql in the SQL editor, then re-seed.",
+    );
+    for (const key of PREVIEW_ONLY_COLUMNS) delete payload[key];
+    ({ data, error } = await db
+      .from("courses")
+      .upsert(payload, { onConflict: "slug" })
+      .select("id, slug, title, is_published")
+      .single());
+  }
+
+  if (error) throw error;
+  return data;
+}
+
+async function seedCourse(db, { course, moduleTitles }) {
+  const row = await upsertCourse(db, course);
+
+  if (moduleTitles.length === 0) {
+    console.log(`Upserted course (no modules): ${row.slug} [${row.id}]`);
+    return row;
+  }
+
+  const { data: existingModules, error: existingErr } = await db
+    .from("modules")
+    .select("id, sort_order, title")
+    .eq("course_id", row.id);
+  if (existingErr) throw existingErr;
+
+  const modulesByOrder = new Map(
+    (existingModules ?? []).map((module) => [module.sort_order, module]),
+  );
+
+  for (const [sort_order, title] of moduleTitles) {
+    const existing = modulesByOrder.get(sort_order);
+    if (existing) {
+      if (existing.title !== title) {
+        const { error: updateErr } = await db
+          .from("modules")
+          .update({ title })
+          .eq("id", existing.id);
+        if (updateErr) throw updateErr;
+      }
+      modulesByOrder.delete(sort_order);
+      continue;
+    }
+
+    const { error: insertErr } = await db
+      .from("modules")
+      .insert({ course_id: row.id, title, sort_order });
+    if (insertErr) throw insertErr;
+  }
+
+  for (const orphan of modulesByOrder.values()) {
+    const { error: deleteErr } = await db.from("modules").delete().eq("id", orphan.id);
+    if (deleteErr) throw deleteErr;
+  }
+
+  console.log(
+    `Upserted course: ${row.slug} — ${moduleTitles.length} modules` +
+      (row.is_published ? "" : " (unpublished)"),
+  );
+
+  return row;
+}
 
 async function main() {
   const env = loadEnv();
@@ -82,32 +110,14 @@ async function main() {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  // 1. Upsert course (create if missing, otherwise refresh metadata)
-  const { data: course, error: cErr } = await db
-    .from("courses")
-    .upsert(COURSE, { onConflict: "slug" })
-    .select("id")
-    .single();
-  if (cErr) throw cErr;
-  console.log("Upserted course:", course.id);
+  for (const entry of SEED_COURSES) {
+    await seedCourse(db, entry);
+  }
 
-  // 2. Recreate modules (the modules table has no natural unique key beyond id,
-  //    so we clear and re-insert). This cascades to lessons, which the lessons
-  //    seeder re-inserts afterwards.
-  const { error: delErr } = await db.from("modules").delete().eq("course_id", course.id);
-  if (delErr) throw delErr;
-
-  const moduleRows = MODULE_TITLES.map(([sort_order, title]) => ({
-    course_id: course.id,
-    title,
-    sort_order,
-  }));
-  const { error: insErr } = await db.from("modules").insert(moduleRows);
-  if (insErr) throw insErr;
-  console.log(`Inserted ${moduleRows.length} modules`);
+  console.log(`Done — processed ${SEED_COURSES.length} courses.`);
 }
 
 main().catch((err) => {
-  console.error("Update failed:", err.message ?? err);
+  console.error("Seed failed:", err.message ?? err);
   process.exit(1);
 });
