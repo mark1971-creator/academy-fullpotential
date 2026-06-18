@@ -1,9 +1,10 @@
 import { ArrowRight, BookOpen } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 
+import { CourseThumbnailImage } from "@/components/catalog/course-thumbnail-image";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { COURSE_THUMBNAIL_ASPECT_CLASS } from "@/lib/courses/course-thumbnails";
 import { formatPrice } from "@/lib/courses/utils";
 import { cn } from "@/lib/utils";
 import type { EnrollmentWithCourse } from "@/types/lms";
@@ -47,17 +48,20 @@ export function EnrolledCourses({ enrollments }: EnrolledCoursesProps) {
             )}
           >
             {enrollment.course.thumbnailUrl ? (
-              <div className="relative aspect-[16/9] bg-brand-charcoal/40">
-                <Image
+              <div className={cn("relative bg-brand-charcoal/40", COURSE_THUMBNAIL_ASPECT_CLASS)}>
+                <CourseThumbnailImage
                   src={enrollment.course.thumbnailUrl}
                   alt={enrollment.course.title}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 50vw"
+                  objectPosition="top"
                 />
               </div>
             ) : (
-              <div className="flex aspect-[16/9] items-center justify-center bg-gradient-to-br from-brand-blue/10 to-brand-gold/10">
+              <div
+                className={cn(
+                  "flex items-center justify-center bg-gradient-to-br from-brand-blue/10 to-brand-gold/10",
+                  COURSE_THUMBNAIL_ASPECT_CLASS,
+                )}
+              >
                 <BookOpen className="size-10 text-brand-blue/50" strokeWidth={1.25} />
               </div>
             )}

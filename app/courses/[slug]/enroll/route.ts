@@ -1,20 +1,19 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 
 import { getCourseBySlug } from "@/lib/actions/courses";
 import { enrollInCourse, isUserEnrolledInCourse } from "@/lib/actions/enrollments";
 import { hasStripeConfig } from "@/lib/env";
 import { createStripeCheckoutSession } from "@/lib/stripe/checkout";
 
-type CourseEnrollPageProps = {
-  params: Promise<{ slug: string }>;
-};
+type RouteContext = { params: Promise<{ slug: string }> };
 
 /**
  * Unified enroll entry: sign-in (if needed) → free enroll OR Stripe Checkout → learn.
- * Linked from every "Enroll now" CTA on course preview pages.
+ * Implemented as a Route Handler so revalidatePath can run before redirect (Next.js 16
+ * disallows revalidation during Server Component render).
  */
-export default async function CourseEnrollPage({ params }: CourseEnrollPageProps) {
+export async function GET(_request: Request, { params }: RouteContext) {
   const { slug } = await params;
   const enrollPath = `/courses/${slug}/enroll`;
 
@@ -25,7 +24,7 @@ export default async function CourseEnrollPage({ params }: CourseEnrollPageProps
 
   const course = await getCourseBySlug(slug);
   if (!course) {
-    notFound();
+    redirect("/courses");
   }
 
   if (await isUserEnrolledInCourse(course.id)) {

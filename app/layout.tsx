@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Cormorant_Garamond, Lato } from "next/font/google";
 
@@ -27,6 +27,12 @@ export const metadata: Metadata = {
   },
   description:
     "A place to learn and grow into your full potential — certifications, trainings, and transformational programs from Being at Full Potential.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

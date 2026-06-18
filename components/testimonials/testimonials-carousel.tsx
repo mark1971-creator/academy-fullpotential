@@ -92,7 +92,7 @@ export function TestimonialsCarousel({
               aria-label="Previous testimonials"
               disabled={!canScrollLeft}
               onClick={() => scrollByPage("left")}
-              className={navButtonClassNames[variant]}
+              className={cn("size-11", navButtonClassNames[variant])}
             >
               <ChevronLeft className="size-4" />
             </Button>
@@ -103,7 +103,7 @@ export function TestimonialsCarousel({
               aria-label="Next testimonials"
               disabled={!canScrollRight}
               onClick={() => scrollByPage("right")}
-              className={navButtonClassNames[variant]}
+              className={cn("size-11", navButtonClassNames[variant])}
             >
               <ChevronRight className="size-4" />
             </Button>

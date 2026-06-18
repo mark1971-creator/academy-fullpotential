@@ -222,8 +222,8 @@ function LessonContent({
               variant={isComplete ? "outline" : "gold"}
               size="lg"
               className={cn(
-                "shrink-0 uppercase tracking-[0.12em]",
-                !isComplete && "min-w-[11rem] shadow-[0_8px_28px_-8px_rgb(250_204_21_/_0.55)]",
+                "w-full shrink-0 uppercase tracking-[0.12em] lg:w-auto",
+                !isComplete && "lg:min-w-[11rem] shadow-[0_8px_28px_-8px_rgb(250_204_21_/_0.55)]",
               )}
               disabled={isComplete || isPending}
               onClick={onMarkComplete}

@@ -14,12 +14,12 @@ function SignedOutActions({ variant = "chrome" }: AuthActionsProps) {
   const isChrome = variant === "chrome";
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5 sm:gap-2">
       <Button
         variant="ghost"
-        size="sm"
+        size="default"
         className={cn(
-          "uppercase tracking-[0.14em]",
+          "min-h-11 px-3 uppercase tracking-[0.14em] sm:min-h-9 sm:px-4",
           isChrome
             ? "text-brand-chrome-muted hover:bg-slate-100 hover:text-brand-chrome-foreground"
             : "text-brand-warm hover:bg-white/5 hover:text-foreground",
@@ -30,8 +30,9 @@ function SignedOutActions({ variant = "chrome" }: AuthActionsProps) {
         Login
       </Button>
       <Button
-        size="sm"
+        size="default"
         variant="gold"
+        className="min-h-11 px-3 sm:min-h-9 sm:px-4"
         nativeButton={false}
         render={<Link href="/sign-up" />}
       >
@@ -60,7 +61,7 @@ export async function AuthActions({ variant = "chrome" }: AuthActionsProps) {
     <UserButton
       appearance={{
         elements: {
-          avatarBox: "size-9 ring-1 ring-brand-blue/25",
+          avatarBox: "size-11 ring-1 ring-brand-blue/25 sm:size-9",
         },
       }}
     />

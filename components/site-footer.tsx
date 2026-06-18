@@ -4,8 +4,8 @@ import { BrandLogoLink } from "@/components/brand-logo";
 
 export function SiteFooter() {
   return (
-    <footer className="relative z-10 mt-auto academy-chrome border-t border-brand-chrome-border">
-      <div className="mx-auto max-w-7xl px-8 py-16 sm:px-10 lg:px-12 lg:py-20">
+    <footer className="relative z-10 mt-auto academy-chrome border-t border-brand-chrome-border pb-[env(safe-area-inset-bottom)]">
+      <div className="mx-auto max-w-7xl px-6 py-14 sm:px-10 sm:py-16 lg:px-12 lg:py-20">
         <div className="flex flex-col gap-14 sm:flex-row sm:items-start sm:justify-between">
           <div className="max-w-md">
             <BrandLogoLink variant="chrome" showAcademyBadge size="prominent" />
@@ -15,7 +15,7 @@ export function SiteFooter() {
             </p>
           </div>
 
-          <div className="flex gap-16 text-sm">
+          <div className="flex flex-col gap-10 sm:flex-row sm:gap-16 sm:text-sm">
             <div>
               <p className="mb-5 text-xs font-semibold uppercase tracking-[0.22em] text-brand-blue">
                 Academy

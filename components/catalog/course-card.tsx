@@ -1,8 +1,9 @@
-import { ArrowRight, BookOpen, Clock, GraduationCap } from "lucide-react";
-import Image from "next/image";
+import { ArrowRight, Award, BookOpen, Clock, GraduationCap } from "lucide-react";
 import Link from "next/link";
 
+import { CourseThumbnailImage } from "@/components/catalog/course-thumbnail-image";
 import { Button } from "@/components/ui/button";
+import { formatIcfCceuLabel, getCourseIcfCceus } from "@/lib/courses/icf-credentials";
 import { formatPrice, truncateText } from "@/lib/courses/utils";
 import { cn } from "@/lib/utils";
 import type { Course } from "@/types/lms";
@@ -13,6 +14,8 @@ type CourseCardProps = {
 };
 
 export function CourseCard({ course, className }: CourseCardProps) {
+  const icfCceus = getCourseIcfCceus(course.slug);
+
   return (
     <article
       className={cn(
@@ -22,16 +25,14 @@ export function CourseCard({ course, className }: CourseCardProps) {
     >
       {course.thumbnailUrl ? (
         <div className="relative aspect-[16/10] overflow-hidden bg-brand-charcoal/20">
-          <Image
+          <CourseThumbnailImage
             src={course.thumbnailUrl}
             alt={course.title}
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-            sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+            imageClassName="transition-transform duration-500 group-hover:scale-[1.03]"
           />
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[rgb(88_106_128)]/80 via-transparent to-transparent"
+            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-brand-charcoal/40 via-transparent to-transparent"
           />
         </div>
       ) : (
@@ -45,6 +46,12 @@ export function CourseCard({ course, className }: CourseCardProps) {
           <span className="inline-flex rounded-full border border-brand-gold/30 bg-brand-gold/18 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-brand-gold-light">
             {formatPrice(course.price)}
           </span>
+          {icfCceus != null && (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-teal/40 bg-brand-teal/15 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-brand-teal">
+              <Award className="size-3.5" />
+              {formatIcfCceuLabel(icfCceus)}
+            </span>
+          )}
           {course.level && (
             <span className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-warm">
               <GraduationCap className="size-3.5" />

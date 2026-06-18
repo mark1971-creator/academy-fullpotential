@@ -13,6 +13,7 @@ import {
 import { prepareCoursesForCatalog } from "@/lib/courses/catalog-order";
 import { getCourseIntroVideoUrl } from "@/lib/courses/course-intro-videos";
 import { HPCC_TESTIMONIALS } from "@/lib/courses/hpcc-testimonials";
+import { withThumbnailCacheBust } from "@/lib/courses/course-thumbnails";
 
 /**
  * Local development fallback data.
@@ -99,7 +100,7 @@ function createPreviewFixtureCourse(config: {
     title: config.title,
     tagline: config.tagline,
     description: config.description,
-    thumbnailUrl: `/Images/courses/${config.slug}.webp`,
+    thumbnailUrl: withThumbnailCacheBust(`/Images/courses/${config.slug}.webp`),
     heroVideoUrl: config.heroVideoUrl ?? getCourseIntroVideoUrl(config.slug),
     durationLabel: config.durationLabel,
     level: config.level,
@@ -435,13 +436,13 @@ export const HPCC_FIXTURE_COURSE: CourseWithCurriculum = {
   id: FIXTURE_COURSE_ID,
   title: "Certification – Human Potential Development Coach Training",
   tagline:
-    "Equip yourself to unlock human potential in leaders, teams, and organizations.",
+    "ICF-approved certification — earn 25 Core Competency CCEUs while unlocking human potential in leaders, teams, and organizations.",
   description:
-    "Welcome and thank you for enrolling for this certification training. If you work with leaders, teams & organizations you will probably agree that much of our Human Potential remains dormant or unexpressed in the work environment. This program equips you to debrief assessments, build business cases for human potential development, and guide transformational client work.",
+    "This ICF-approved certification awards 25 Core Competency Continuing Education Units (CCEUs). Welcome and thank you for enrolling. If you work with leaders, teams and organizations you will probably agree that much of our Human Potential remains dormant or unexpressed in the work environment. This program equips you to debrief assessments, build business cases for human potential development, and guide transformational client work.",
   slug: FIXTURE_SLUG,
-  thumbnailUrl: "/Images/courses/human-potential-coach-certification.webp",
+  thumbnailUrl: withThumbnailCacheBust("/Images/courses/human-potential-coach-certification.webp"),
   heroVideoUrl: getCourseIntroVideoUrl(FIXTURE_SLUG),
-  durationLabel: "24 hours",
+  durationLabel: "7 weeks",
   level: "Expert",
   rating: 5.0,
   ratingCount: 10,
@@ -462,6 +463,7 @@ export const HPCC_FIXTURE_COURSE: CourseWithCurriculum = {
   ],
   testimonials: HPCC_TESTIMONIALS,
   tags: [
+    "25 ICF CCEUs",
     "Coaching",
     "Conscious Culture",
     "Human Potential",
@@ -619,9 +621,9 @@ const FIXTURE_COURSES_WITH_CURRICULUM: CourseWithCurriculum[] = [
     id: `${FIXTURE_ID_PREFIX}idg-coach`,
     slug: "idg-coach-certification",
     title: "6-Week IDG Coach Certification Training",
-    tagline: "If you can measure it, you can manage it.",
+    tagline: "ICF-approved — earn 25 Core Competency CCEUs with a rigorous IDG coaching certification.",
     description:
-      "This certification training equips you with a powerful IDG Measurement Tool and associated coaching modalities to bring objectivity and action-ability to Inner Development work — especially in organizational contexts. Support leaders on their inner journey and quantify impact toward the 17 SDGs.",
+      "This ICF-approved certification training awards 25 Core Competency Continuing Education Units (CCEUs). You will gain a powerful IDG Measurement Tool and associated coaching modalities to bring objectivity and action-ability to Inner Development work — especially in organizational contexts. Support leaders on their inner journey and quantify impact toward the 17 SDGs.",
     price: 995,
     durationLabel: "6 weeks",
     level: "Certification",
@@ -641,7 +643,7 @@ const FIXTURE_COURSES_WITH_CURRICULUM: CourseWithCurriculum[] = [
       "Leaders who want to bring rigor to inner development work",
       "Anyone wanting to demonstrate the business and SDG impact of inner development",
     ],
-    tags: ["IDG", "Inner Development", "SDGs", "Coaching", "Certification"],
+    tags: ["25 ICF CCEUs", "IDG", "Inner Development", "SDGs", "Coaching", "Certification"],
     moduleTitles: [
       "Week 1: Foundations of Inner Development Goals",
       "Week 2: Mastering the IDG Measurement Tool – Administration",

@@ -145,6 +145,7 @@
 
   html {
     @apply font-sans;
+    overflow-x: clip;
   }
 
   .academy-theme body {
@@ -156,6 +157,12 @@
       radial-gradient(ellipse 50% 42% at 0% 92%, rgb(74 93 117 / 0.35), transparent 58%),
       linear-gradient(180deg, #2a384c 0%, #263548 45%, #243044 100%);
     background-attachment: fixed;
+  }
+
+  @media (max-width: 1023px) {
+    .academy-theme body {
+      background-attachment: scroll;
+    }
   }
 
   h1,

@@ -17,7 +17,7 @@ values (
   995.00,
   true,
   null,
-  '24 hours',
+  '7 weeks',
   'Expert',
   5.0,
   10,

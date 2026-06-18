@@ -29,7 +29,7 @@ export function BrandLogo({
           className={cn(
             "brand-logo-mark shrink-0",
             isProminent
-              ? "h-11 w-[8.5rem] sm:h-12 sm:w-[9.25rem]"
+              ? "h-9 w-[7rem] sm:h-12 sm:w-[9.25rem]"
               : "h-9 w-[7.4rem] sm:h-10 sm:w-[8.25rem]",
           )}
           role="img"

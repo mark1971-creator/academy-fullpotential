@@ -29,12 +29,12 @@ export const SEED_COURSES = [
       hero_video_url: COURSE_INTRO_VIDEOS["human-potential-coach-certification"] ?? null,
       title: "Certification - Human Potential Development Coach Training",
       tagline:
-        "Equip yourself to unlock human potential in leaders, teams, and organizations.",
+        "ICF-approved certification — earn 25 Core Competency CCEUs while unlocking human potential in leaders, teams, and organizations.",
       description:
-        "Welcome and thank you for enrolling for this certification training. If you work with leaders, teams & organizations you will probably agree that much of our Human Potential remains dormant or unexpressed in the work environment. This program equips you to debrief assessments, build business cases for human potential development, and guide transformational client work.",
+        "This ICF-approved certification awards 25 Core Competency Continuing Education Units (CCEUs). Welcome and thank you for enrolling. If you work with leaders, teams and organizations you will probably agree that much of our Human Potential remains dormant or unexpressed in the work environment. This program equips you to debrief assessments, build business cases for human potential development, and guide transformational client work.",
       price: 995.0,
       is_published: true,
-      duration_label: "24 hours",
+      duration_label: "7 weeks",
       level: "Expert",
       rating: 5.0,
       rating_count: 10,
@@ -55,6 +55,7 @@ export const SEED_COURSES = [
       ],
       testimonials: HPCC_TESTIMONIALS,
       tags: [
+        "25 ICF CCEUs",
         "Coaching",
         "Conscious Culture",
         "Human Potential",
@@ -84,9 +85,9 @@ export const SEED_COURSES = [
       image_url: "/Images/courses/idg-coach-certification.webp",
       hero_video_url: COURSE_INTRO_VIDEOS["idg-coach-certification"] ?? null,
       title: "6-Week IDG Coach Certification Training",
-      tagline: "If you can measure it, you can manage it.",
+      tagline: "ICF-approved — earn 25 Core Competency CCEUs with a rigorous IDG coaching certification.",
       description:
-        "This certification training equips you with a powerful IDG Measurement Tool and associated coaching modalities to bring objectivity and action-ability to Inner Development work — especially in organizational contexts. Support leaders on their inner journey and quantify impact toward the 17 SDGs.",
+        "This ICF-approved certification training awards 25 Core Competency Continuing Education Units (CCEUs). You will gain a powerful IDG Measurement Tool and associated coaching modalities to bring objectivity and action-ability to Inner Development work — especially in organizational contexts. Support leaders on their inner journey and quantify impact toward the 17 SDGs.",
       price: 995.0,
       is_published: true,
       duration_label: "6 weeks",
@@ -109,6 +110,7 @@ export const SEED_COURSES = [
       ],
       testimonials: [],
       tags: [
+        "25 ICF CCEUs",
         "IDG",
         "Inner Development",
         "SDGs",

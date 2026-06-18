@@ -19,6 +19,11 @@ const nextConfig: NextConfig = {
         pathname: "/vi/**",
       },
     ],
+    localPatterns: [
+      {
+        pathname: "/Images/**",
+      },
+    ],
   },
   // Dev-server memory: keep fewer compiled pages resident and evict them sooner.
   onDemandEntries: {

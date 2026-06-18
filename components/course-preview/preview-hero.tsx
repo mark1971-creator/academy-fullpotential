@@ -1,11 +1,13 @@
-import { Clock, GraduationCap, Star, Users } from "lucide-react";
+import { Clock, GraduationCap, Star, Users, Award } from "lucide-react";
 import Link from "next/link";
 
 import { EnrollCta } from "@/components/course-preview/enroll-cta";
+import { CourseThumbnailImage } from "@/components/catalog/course-thumbnail-image";
 import { YouTubePlayer } from "@/components/courses/youtube-player";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { formatIcfCceuLabel, getCourseIcfCceus } from "@/lib/courses/icf-credentials";
 import { formatPrice } from "@/lib/courses/utils";
 import type { CoursePreview } from "@/types/lms";
 
@@ -23,6 +25,7 @@ export function PreviewHero({
   isEnrolled,
 }: PreviewHeroProps) {
   const headline = course.tagline ?? course.description;
+  const icfCceus = getCourseIcfCceus(course.slug);
 
   return (
     <section className="academy-card-elevated overflow-hidden">
@@ -32,6 +35,12 @@ export function PreviewHero({
             <Badge className="border-transparent bg-brand-gold px-3 py-1 text-brand-charcoal">
               {formatPrice(course.price)}
             </Badge>
+            {icfCceus != null && (
+              <Badge className="gap-1.5 border-transparent bg-brand-teal/20 px-3 py-1.5 text-brand-teal">
+                <Award className="size-3.5" />
+                {formatIcfCceuLabel(icfCceus)}
+              </Badge>
+            )}
             {course.level && (
               <Badge variant="outline" className="gap-1 border-brand-teal/40 text-brand-teal">
                 <GraduationCap className="size-3" />
@@ -58,6 +67,13 @@ export function PreviewHero({
                 )}
               </div>
             </div>
+          )}
+
+          {icfCceus != null && (
+            <p className="mt-5 max-w-2xl text-sm font-medium leading-relaxed text-brand-teal sm:text-base">
+              ICF-approved program — graduates earn {icfCceus} Core Competency Continuing
+              Education Units (CCEUs) toward ICF credential renewal.
+            </p>
           )}
 
           {headline && (
@@ -100,7 +116,7 @@ export function PreviewHero({
             <Button
               variant="outline"
               size="lg"
-              className="border-brand-teal/30 hover:border-brand-teal/60 hover:text-brand-teal"
+              className="w-full border-brand-teal/30 hover:border-brand-teal/60 hover:text-brand-teal sm:w-auto"
               nativeButton={false}
               render={<Link href="/courses" />}
             >
@@ -111,11 +127,23 @@ export function PreviewHero({
 
         <Card className="overflow-hidden border-border bg-brand-charcoal shadow-[0_16px_48px_-20px_rgb(0_0_0_/_0.65)]">
           <CardContent className="p-0">
-            <YouTubePlayer
-              url={heroVideoUrl}
-              title={course.title}
-              className="rounded-none"
-            />
+            {heroVideoUrl ? (
+              <YouTubePlayer
+                url={heroVideoUrl}
+                title={course.title}
+                className="rounded-none"
+              />
+            ) : course.thumbnailUrl ? (
+              <div className="relative aspect-video">
+                <CourseThumbnailImage src={course.thumbnailUrl} alt={course.title} />
+              </div>
+            ) : (
+              <YouTubePlayer
+                url={null}
+                title={course.title}
+                className="rounded-none"
+              />
+            )}
           </CardContent>
         </Card>
       </div>

@@ -1,4 +1,5 @@
 import type { Database } from "@/types/database";
+import { withThumbnailCacheBust } from "@/lib/courses/course-thumbnails";
 import type {
   Assignment,
   AssignmentProgress,
@@ -70,7 +71,7 @@ export function mapCourse(row: CourseRow): Course {
     description: row.description,
     tagline: row.tagline,
     slug: row.slug,
-    thumbnailUrl: row.image_url,
+    thumbnailUrl: withThumbnailCacheBust(row.image_url),
     heroVideoUrl: row.hero_video_url,
     durationLabel: row.duration_label,
     level: row.level,

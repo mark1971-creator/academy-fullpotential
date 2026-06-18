@@ -57,8 +57,10 @@ export default async function MyCoursesPage() {
         <p className="mt-5 text-lg text-brand-warm">
           Welcome back,{" "}
           <span className="font-medium text-foreground">{displayName}</span>
-          {email ? <span className="text-brand-warm"> — {email}</span> : null}
         </p>
+        {email ? (
+          <p className="mt-1 break-all text-sm text-brand-warm sm:text-base">{email}</p>
+        ) : null}
       </header>
 
       <section className="mt-14 academy-card-elevated p-8 sm:p-10 lg:mt-16">

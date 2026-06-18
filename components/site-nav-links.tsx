@@ -3,21 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { SITE_NAV_ITEMS } from "@/lib/site-nav";
 import { cn } from "@/lib/utils";
-
-const navItems = [
-  { href: "/", label: "Home", match: (path: string) => path === "/" },
-  {
-    href: "/courses",
-    label: "Browse Courses",
-    match: (path: string) => path.startsWith("/courses"),
-  },
-  {
-    href: "/my-courses",
-    label: "My Learning",
-    match: (path: string) => path.startsWith("/my-courses"),
-  },
-] as const;
 
 type SiteNavLinksProps = {
   className?: string;
@@ -35,7 +22,7 @@ export function SiteNavLinks({
 
   return (
     <nav className={className}>
-      {navItems.map((item) => {
+      {SITE_NAV_ITEMS.map((item) => {
         const isActive = item.match(pathname);
 
         return (

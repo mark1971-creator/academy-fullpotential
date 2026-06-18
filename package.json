@@ -12,6 +12,7 @@
     "seed:hpcc-assignments": "node supabase/seed_hpcc_assignments.mjs",
     "db:apply-assignment-migration": "node scripts/apply-assignment-migration.mjs",
     "optimize:course-images": "node scripts/optimize-course-images.mjs",
+    "generate:course-images": "node scripts/generate-course-thumbnails.mjs",
     "prepare:local": "vercel env pull .env.preview.pull --environment=preview --yes && vercel env pull .env.production.pull --environment=production --yes && node scripts/prepare-local-env.mjs"
   },
   "dependencies": {
