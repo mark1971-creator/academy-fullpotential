@@ -13,6 +13,15 @@ import {
 import { prepareCoursesForCatalog } from "@/lib/courses/catalog-order";
 import { getCourseIntroVideoUrl } from "@/lib/courses/course-intro-videos";
 import { HPCC_TESTIMONIALS } from "@/lib/courses/hpcc-testimonials";
+import { buildStandardFixtureModules } from "@/lib/courses/curriculum-fixtures";
+import {
+  EMPLOYEE_EXPERIENCE_ASSIGNMENT_SEEDS,
+  EMPLOYEE_EXPERIENCE_SEED_MODULES,
+} from "@/lib/courses/employee-experience-fixture-data";
+import {
+  WHOLENESS_ASSIGNMENT_SEEDS,
+  WHOLENESS_SEED_MODULES,
+} from "@/lib/courses/wholeness-fixture-data";
 import { withThumbnailCacheBust } from "@/lib/courses/course-thumbnails";
 
 /**
@@ -117,6 +126,35 @@ function createPreviewFixtureCourse(config: {
     updatedAt: FIXTURE_TIMESTAMP,
     modules: createFixtureModules(config.id, config.moduleTitles, {
       placeholderLessons: config.placeholderLessons,
+    }),
+  };
+}
+
+function createCurriculumFixtureCourse(
+  config: Parameters<typeof createPreviewFixtureCourse>[0],
+  curriculum: {
+    moduleTitles: string[];
+    introVideoUrl: string | null;
+    assignments: Array<{ sort_order: number; title: string; description: string }>;
+    extraLessons?: Array<{
+      moduleOrder: number;
+      title: string;
+      lessonType: LessonType;
+      youtubeUrl: string | null;
+      content?: string | null;
+      sortOrder: number;
+    }>;
+  },
+): CourseWithCurriculum {
+  const base = createPreviewFixtureCourse({ ...config, placeholderLessons: false });
+  return {
+    ...base,
+    modules: buildStandardFixtureModules({
+      courseId: config.id,
+      moduleTitles: curriculum.moduleTitles,
+      introVideoUrl: curriculum.introVideoUrl,
+      assignments: curriculum.assignments,
+      extraLessons: curriculum.extraLessons,
     }),
   };
 }
@@ -432,6 +470,450 @@ const modules: ModuleWithLessons[] = SEED_MODULES.map((seedModule, moduleIndex) 
   };
 });
 
+const TEAM_COACH_COURSE_ID = `${FIXTURE_ID_PREFIX}team-coach`;
+const TEAM_COACH_SLUG = "human-potential-team-coach-certification";
+
+const TEAM_COACH_SEED_MODULES: SeedModule[] = [
+  {
+    title: "Module 1: Laying the foundation",
+    lessons: [
+      {
+        title: "Creating the optimal conditions for this certification journey",
+        youtubeUrl: "https://youtu.be/2XXFEndXKhE",
+        lessonType: "video",
+        durationLabel: "18:55",
+        durationMinutes: 19,
+      },
+    ],
+  },
+  {
+    title: "Module 2: The Human Potential Tools",
+    lessons: [
+      {
+        title: "The Human Potential Iceberg",
+        youtubeUrl: "https://youtu.be/0ihlThTOa0U",
+        lessonType: "video",
+        durationLabel: "22:45",
+        durationMinutes: 23,
+      },
+      {
+        title: "The Maturity Consciousness Model",
+        youtubeUrl: "https://youtu.be/gnttLZKH2D0",
+        lessonType: "video",
+        durationLabel: "25:03",
+        durationMinutes: 26,
+      },
+      {
+        title: "The 5 Team Measures",
+        youtubeUrl: null,
+        lessonType: "resource",
+        durationLabel: null,
+        durationMinutes: null,
+        content:
+          "Review the five essential Full Potential Team Measures. Video for this topic will be added soon.",
+      },
+      {
+        title: 'The Human Potential "House"',
+        youtubeUrl: null,
+        lessonType: "resource",
+        durationLabel: null,
+        durationMinutes: null,
+        content:
+          "Study the Human Potential House framework for teams. Video for this topic will be added soon.",
+      },
+    ],
+  },
+  {
+    title: "Module 3: Unleashing new insight",
+    lessons: [
+      {
+        title: "Role play — Human Potential House",
+        youtubeUrl: "https://youtu.be/cX3M-PDKhtw",
+        lessonType: "video",
+        durationLabel: null,
+        durationMinutes: null,
+      },
+      {
+        title: "Role play — Maturity Consciousness Framework",
+        youtubeUrl: "https://youtu.be/PiTnDjl89K4",
+        lessonType: "video",
+        durationLabel: "22:57",
+        durationMinutes: 23,
+      },
+    ],
+  },
+  {
+    title: "Module 4: Sense Making",
+    lessons: [
+      {
+        title: "Moving the team from insight to action",
+        youtubeUrl: "https://youtu.be/2h7QYESAzPE",
+        lessonType: "video",
+        durationLabel: "35:37",
+        durationMinutes: 36,
+      },
+    ],
+  },
+  {
+    title: "Module 5: Maintaining Momentum",
+    lessons: [
+      {
+        title: "Putting in place a sustainable follow-up plan",
+        youtubeUrl: "https://youtu.be/PsADDe5JE9s",
+        lessonType: "video",
+        durationLabel: "19:20",
+        durationMinutes: 20,
+      },
+    ],
+  },
+  {
+    title: "Module 6: Closing & celebration",
+    lessons: [
+      {
+        title: "Finalizing the certification process",
+        youtubeUrl: "https://youtu.be/yfMvAQQjRpM",
+        lessonType: "video",
+        durationLabel: "19:15",
+        durationMinutes: 20,
+      },
+      {
+        title: "Program resources & feedback",
+        youtubeUrl: null,
+        lessonType: "resource",
+        durationLabel: null,
+        durationMinutes: null,
+        content: "Access certification resources, feedback forms, and program downloads.",
+      },
+      {
+        title: "Team Coach certification checklist",
+        youtubeUrl: null,
+        lessonType: "resource",
+        durationLabel: null,
+        durationMinutes: null,
+        content:
+          "Review the certification checklist to confirm you have met all program requirements.",
+      },
+    ],
+  },
+];
+
+const teamCoachModules: ModuleWithLessons[] = TEAM_COACH_SEED_MODULES.map(
+  (seedModule, moduleIndex) => {
+    const moduleOrder = moduleIndex + 1;
+    const moduleId = `${TEAM_COACH_COURSE_ID}-m${moduleOrder}`;
+    const assignmentSeed = [
+      {
+        title: "Assignment — Laying the foundation",
+        description:
+          "Watch the module video on creating optimal conditions for this certification journey.\n\nIntroduce yourself and the team you will use as a practice case throughout this certification.",
+      },
+      {
+        title: "Assignment — The Human Potential Tools",
+        description:
+          "Watch the videos on the Human Potential Iceberg and the Maturity Consciousness Model.\n\nReview the 5 Team Measures and the Human Potential House materials.",
+      },
+      {
+        title: "Assignment — Unleashing new insight",
+        description:
+          "Watch both role-play videos and reflect on what you noticed in yourself and the team.",
+      },
+      {
+        title: "Assignment — Sense making",
+        description:
+          "Design a sense-making session outline for your practice team: opening framing, key insights, and collective commitments.",
+      },
+      {
+        title: "Assignment — Maintaining momentum",
+        description:
+          "Draft a 90-day follow-up plan for your practice team, including check-in cadence and accountability structures.",
+      },
+      {
+        title: "Assignment — Certification & closing",
+        description:
+          "Complete the certification checklist, submit your feedback form, and document your integration plan.",
+      },
+    ][moduleIndex];
+
+    return {
+      id: moduleId,
+      courseId: TEAM_COACH_COURSE_ID,
+      title: seedModule.title,
+      order: moduleOrder,
+      createdAt: FIXTURE_TIMESTAMP,
+      updatedAt: FIXTURE_TIMESTAMP,
+      assignments: [
+        {
+          id: `${moduleId}-assignment`,
+          title: assignmentSeed.title,
+          description: assignmentSeed.description,
+          fileUrl: null,
+          fileType: null,
+          resourceFiles: [],
+          lessonId: null,
+          moduleId,
+          createdAt: FIXTURE_TIMESTAMP,
+          updatedAt: FIXTURE_TIMESTAMP,
+        },
+      ],
+      quizzes: [],
+      lessons: seedModule.lessons.map((seedLesson, lessonIndex) => {
+        const lessonOrder = lessonIndex + 1;
+        return {
+          id: `${moduleId}-l${lessonOrder}`,
+          moduleId,
+          title: seedLesson.title,
+          lessonType: seedLesson.lessonType,
+          youtubeUrl: seedLesson.youtubeUrl,
+          content: seedLesson.content ?? null,
+          durationLabel: seedLesson.durationLabel,
+          durationMinutes: seedLesson.durationMinutes,
+          order: lessonOrder,
+          assignments: [],
+          quizzes: [],
+          createdAt: FIXTURE_TIMESTAMP,
+          updatedAt: FIXTURE_TIMESTAMP,
+        };
+      }),
+    };
+  },
+);
+
+const TEAM_COACH_FIXTURE_COURSE: CourseWithCurriculum = {
+  id: TEAM_COACH_COURSE_ID,
+  slug: TEAM_COACH_SLUG,
+  title: "Human Potential Team Coach Certification Training",
+  tagline:
+    "Become a Certified Human Potential Team Coach and unlock team potential using our proven assessment tools and methodologies.",
+  description:
+    "This training equips coaches and facilitators to support teams in unleashing their full human potential in service of a common goal.",
+  thumbnailUrl: withThumbnailCacheBust("/Images/courses/human-potential-team-coach-certification.webp"),
+  heroVideoUrl: getCourseIntroVideoUrl(TEAM_COACH_SLUG),
+  durationLabel: "20 hours",
+  level: "Expert",
+  rating: 5.0,
+  ratingCount: 8,
+  enrolledCount: 42,
+  whatYouWillLearn: [
+    "Master Human Potential assessment tools for teams",
+    "Facilitate transformational team conversations",
+    "Anchor the 5 essential team measures",
+    "Combine powerful facilitation techniques with human potential data",
+    "Drive breakthroughs in team collaboration and performance",
+  ],
+  whoThisIsFor: [
+    "Team coaches",
+    "Internal facilitators and change agents",
+    "Leaders working with teams",
+    "OD professionals",
+    "Anyone facilitating group transformation",
+  ],
+  testimonials: [],
+  tags: [
+    "Team coaching",
+    "Human Potential",
+    "Facilitation",
+    "Organizational development",
+    "Group transformation",
+  ],
+  price: 0,
+  isPublished: true,
+  createdAt: FIXTURE_TIMESTAMP,
+  updatedAt: FIXTURE_TIMESTAMP,
+  modules: teamCoachModules,
+};
+
+const EMPLOYEE_EXPERIENCE_COURSE_ID = `${FIXTURE_ID_PREFIX}employee-experience`;
+const EMPLOYEE_EXPERIENCE_SLUG = "breakthroughs-employee-experience";
+
+const employeeExperienceModules: ModuleWithLessons[] = EMPLOYEE_EXPERIENCE_SEED_MODULES.map(
+  (seedModule, moduleIndex) => {
+    const moduleOrder = moduleIndex + 1;
+    const moduleId = `${EMPLOYEE_EXPERIENCE_COURSE_ID}-m${moduleOrder}`;
+    const assignmentSeed = EMPLOYEE_EXPERIENCE_ASSIGNMENT_SEEDS[moduleIndex];
+
+    return {
+      id: moduleId,
+      courseId: EMPLOYEE_EXPERIENCE_COURSE_ID,
+      title: seedModule.title,
+      order: moduleOrder,
+      createdAt: FIXTURE_TIMESTAMP,
+      updatedAt: FIXTURE_TIMESTAMP,
+      assignments: [
+        {
+          id: `${moduleId}-assignment`,
+          title: assignmentSeed.title,
+          description: assignmentSeed.description,
+          fileUrl: null,
+          fileType: null,
+          resourceFiles: [],
+          lessonId: null,
+          moduleId,
+          createdAt: FIXTURE_TIMESTAMP,
+          updatedAt: FIXTURE_TIMESTAMP,
+        },
+      ],
+      quizzes: [],
+      lessons: seedModule.lessons.map((seedLesson, lessonIndex) => {
+        const lessonOrder = lessonIndex + 1;
+        return {
+          id: `${moduleId}-l${lessonOrder}`,
+          moduleId,
+          title: seedLesson.title,
+          lessonType: seedLesson.lessonType,
+          youtubeUrl: seedLesson.youtubeUrl,
+          content: seedLesson.content ?? null,
+          durationLabel: seedLesson.durationLabel,
+          durationMinutes: seedLesson.durationMinutes,
+          order: lessonOrder,
+          assignments: [],
+          quizzes: [],
+          createdAt: FIXTURE_TIMESTAMP,
+          updatedAt: FIXTURE_TIMESTAMP,
+        };
+      }),
+    };
+  },
+);
+
+const EMPLOYEE_EXPERIENCE_FIXTURE_COURSE: CourseWithCurriculum = {
+  id: EMPLOYEE_EXPERIENCE_COURSE_ID,
+  slug: EMPLOYEE_EXPERIENCE_SLUG,
+  title: "Creating Breakthroughs in Employee Experience",
+  tagline:
+    "Transform employee engagement by focusing on human potential realization and workplace actualization.",
+  description:
+    "Help employees discover pathways to self-actualization through their work and take greater responsibility for their experience with the organization.",
+  thumbnailUrl: withThumbnailCacheBust("/Images/courses/breakthroughs-employee-experience.webp"),
+  heroVideoUrl: getCourseIntroVideoUrl(EMPLOYEE_EXPERIENCE_SLUG),
+  durationLabel: "16 hours",
+  level: "Advanced",
+  rating: 4.9,
+  ratingCount: 12,
+  enrolledCount: 58,
+  whatYouWillLearn: [
+    "Design modern, meaningful employee experiences",
+    "Drive breakthroughs in engagement and innovation",
+    "Implement human potential development in organizations",
+    "Create cultures of self-actualization",
+    "Measure and improve key EX metrics",
+  ],
+  whoThisIsFor: [
+    "HR leaders",
+    "People & Culture professionals",
+    "Managers and team leaders",
+    "Internal coaches and facilitators",
+    "Change agents focused on employee experience",
+  ],
+  testimonials: [],
+  tags: [
+    "Employee experience",
+    "Human Potential",
+    "Engagement",
+    "People & Culture",
+    "Organizational development",
+  ],
+  price: 99,
+  isPublished: true,
+  createdAt: FIXTURE_TIMESTAMP,
+  updatedAt: FIXTURE_TIMESTAMP,
+  modules: employeeExperienceModules,
+};
+
+const WHOLENESS_COURSE_ID = `${FIXTURE_ID_PREFIX}wholeness`;
+const WHOLENESS_SLUG = "from-fragmentation-to-wholeness";
+
+const wholenessModules: ModuleWithLessons[] = WHOLENESS_SEED_MODULES.map(
+  (seedModule, moduleIndex) => {
+    const moduleOrder = moduleIndex + 1;
+    const moduleId = `${WHOLENESS_COURSE_ID}-m${moduleOrder}`;
+    const assignmentSeed = WHOLENESS_ASSIGNMENT_SEEDS[moduleIndex];
+
+    return {
+      id: moduleId,
+      courseId: WHOLENESS_COURSE_ID,
+      title: seedModule.title,
+      order: moduleOrder,
+      createdAt: FIXTURE_TIMESTAMP,
+      updatedAt: FIXTURE_TIMESTAMP,
+      assignments: [
+        {
+          id: `${moduleId}-assignment`,
+          title: assignmentSeed.title,
+          description: assignmentSeed.description,
+          fileUrl: null,
+          fileType: null,
+          resourceFiles: [],
+          lessonId: null,
+          moduleId,
+          createdAt: FIXTURE_TIMESTAMP,
+          updatedAt: FIXTURE_TIMESTAMP,
+        },
+      ],
+      quizzes: [],
+      lessons: seedModule.lessons.map((seedLesson, lessonIndex) => {
+        const lessonOrder = lessonIndex + 1;
+        return {
+          id: `${moduleId}-l${lessonOrder}`,
+          moduleId,
+          title: seedLesson.title,
+          lessonType: seedLesson.lessonType,
+          youtubeUrl: seedLesson.youtubeUrl,
+          content: seedLesson.content ?? null,
+          durationLabel: seedLesson.durationLabel,
+          durationMinutes: seedLesson.durationMinutes,
+          order: lessonOrder,
+          assignments: [],
+          quizzes: [],
+          createdAt: FIXTURE_TIMESTAMP,
+          updatedAt: FIXTURE_TIMESTAMP,
+        };
+      }),
+    };
+  },
+);
+
+const WHOLENESS_FIXTURE_COURSE: CourseWithCurriculum = {
+  id: WHOLENESS_COURSE_ID,
+  slug: WHOLENESS_SLUG,
+  title: "From Fragmentation to Wholeness – Consciousness Development Masterclass",
+  tagline: "The edge isn't more tools or skills. It's more you!",
+  description:
+    "Grow your consciousness into a mature identity — from overload and fragmentation to coherent, whole-self coaching and leadership.",
+  thumbnailUrl: withThumbnailCacheBust("/Images/courses/from-fragmentation-to-wholeness.webp"),
+  heroVideoUrl: getCourseIntroVideoUrl(WHOLENESS_SLUG),
+  durationLabel: "6 weeks",
+  level: "Masterclass",
+  rating: 5.0,
+  ratingCount: 6,
+  enrolledCount: 24,
+  whatYouWillLearn: [
+    "Understand developmental stages and states of consciousness",
+    "Build a sharper developmental diagnostic",
+    "Embody mature identity that holds paradox and complexity",
+    "Cross-map Kegan, Cook-Greuter, Torbert and Pancha Kosha models",
+    "Work from deeper being for clearer knowing and acting",
+  ],
+  whoThisIsFor: [
+    "Experienced transformational coaches",
+    "Leadership development professionals",
+    "Facilitators of complexity and systems change",
+    "Practitioners with meditation or contemplative practices",
+  ],
+  testimonials: [],
+  tags: [
+    "Consciousness development",
+    "Masterclass",
+    "Coaching",
+    "Leadership",
+    "Contemplative practice",
+  ],
+  price: 0,
+  isPublished: true,
+  createdAt: FIXTURE_TIMESTAMP,
+  updatedAt: FIXTURE_TIMESTAMP,
+  modules: wholenessModules,
+};
+
 export const HPCC_FIXTURE_COURSE: CourseWithCurriculum = {
   id: FIXTURE_COURSE_ID,
   title: "Certification – Human Potential Development Coach Training",
@@ -480,143 +962,9 @@ export const HPCC_FIXTURE_COURSE: CourseWithCurriculum = {
 
 const FIXTURE_COURSES_WITH_CURRICULUM: CourseWithCurriculum[] = [
   HPCC_FIXTURE_COURSE,
-  createPreviewFixtureCourse({
-    id: `${FIXTURE_ID_PREFIX}team-coach`,
-    slug: "human-potential-team-coach-certification",
-    title: "Human Potential Team Coach Certification Training",
-    tagline:
-      "Become a Certified Human Potential Team Coach and unlock team potential using our proven assessment tools and methodologies.",
-    description:
-      "This training equips coaches and facilitators to support teams in unleashing their full human potential in service of a common goal.",
-    price: 0,
-    durationLabel: "20 hours",
-    level: "Expert",
-    rating: 5.0,
-    ratingCount: 8,
-    enrolledCount: 42,
-    whatYouWillLearn: [
-      "Master Human Potential assessment tools for teams",
-      "Facilitate transformational team conversations",
-      "Anchor the 5 essential team measures",
-      "Combine powerful facilitation techniques with human potential data",
-      "Drive breakthroughs in team collaboration and performance",
-    ],
-    whoThisIsFor: [
-      "Team coaches",
-      "Internal facilitators and change agents",
-      "Leaders working with teams",
-      "OD professionals",
-      "Anyone facilitating group transformation",
-    ],
-    tags: [
-      "Team coaching",
-      "Human Potential",
-      "Facilitation",
-      "Organizational development",
-      "Group transformation",
-    ],
-    moduleTitles: [
-      "Module 1: Introduction to Team Human Potential",
-      "Module 2: The Human Potential Team Assessment Framework",
-      "Module 3: The 5 Essential Team Measures",
-      "Module 4: Assessment Debriefing for Teams",
-      "Module 5: Transformational Team Facilitation",
-      "Module 6: Integrating Data with Facilitation Techniques",
-      "Module 7: Driving Breakthroughs in Team Performance",
-      "Module 8: Certification, Practice & Next Steps",
-    ],
-    placeholderLessons: true,
-  }),
-  createPreviewFixtureCourse({
-    id: `${FIXTURE_ID_PREFIX}employee-experience`,
-    slug: "breakthroughs-employee-experience",
-    title: "Creating Breakthroughs in Employee Experience",
-    tagline:
-      "Transform employee engagement by focusing on human potential realization and workplace actualization.",
-    description:
-      "Help employees discover pathways to self-actualization through their work and take greater responsibility for their experience with the organization.",
-    price: 0,
-    durationLabel: "16 hours",
-    level: "Advanced",
-    rating: 4.9,
-    ratingCount: 12,
-    enrolledCount: 58,
-    whatYouWillLearn: [
-      "Design modern, meaningful employee experiences",
-      "Drive breakthroughs in engagement and innovation",
-      "Implement human potential development in organizations",
-      "Create cultures of self-actualization",
-      "Measure and improve key EX metrics",
-    ],
-    whoThisIsFor: [
-      "HR leaders",
-      "People & Culture professionals",
-      "Managers and team leaders",
-      "Internal coaches and facilitators",
-      "Change agents focused on employee experience",
-    ],
-    tags: [
-      "Employee experience",
-      "Human Potential",
-      "Engagement",
-      "People & Culture",
-      "Organizational development",
-    ],
-    moduleTitles: [
-      "Module 1: The Case for Human Potential in Employee Experience",
-      "Module 2: Mapping the Employee Experience Journey",
-      "Module 3: Self-Actualization Through Work",
-      "Module 4: Designing Breakthrough EX Interventions",
-      "Module 5: Building Cultures of Engagement and Innovation",
-      "Module 6: Human Potential Development in Organizations",
-      "Module 7: Measuring and Improving EX Metrics",
-      "Module 8: Implementation and Sustaining Change",
-    ],
-    placeholderLessons: true,
-  }),
-  createPreviewFixtureCourse({
-    id: `${FIXTURE_ID_PREFIX}wholeness`,
-    slug: "from-fragmentation-to-wholeness",
-    title: "From Fragmentation to Wholeness – Consciousness Development Masterclass",
-    tagline: "The edge isn't more tools or skills. It's more you!",
-    description:
-      "Grow your consciousness into a mature identity — from overload and fragmentation to coherent, whole-self coaching and leadership.",
-    price: 0,
-    durationLabel: "6 weeks",
-    level: "Masterclass",
-    rating: 5.0,
-    ratingCount: 6,
-    enrolledCount: 24,
-    whatYouWillLearn: [
-      "Understand developmental stages and states of consciousness",
-      "Build a sharper developmental diagnostic",
-      "Embody mature identity that holds paradox and complexity",
-      "Cross-map Kegan, Cook-Greuter, Torbert and Pancha Kosha models",
-      "Work from deeper being for clearer knowing and acting",
-    ],
-    whoThisIsFor: [
-      "Experienced transformational coaches",
-      "Leadership development professionals",
-      "Facilitators of complexity and systems change",
-      "Practitioners with meditation or contemplative practices",
-    ],
-    tags: [
-      "Consciousness development",
-      "Masterclass",
-      "Coaching",
-      "Leadership",
-      "Contemplative practice",
-    ],
-    moduleTitles: [
-      "Week 1: From Fragmentation to Wholeness — Opening the Journey",
-      "Week 2: Developmental Stages and States of Consciousness",
-      "Week 3: Building a Developmental Diagnostic",
-      "Week 4: Embodying Mature Identity — Holding Paradox and Complexity",
-      "Week 5: Cross-Mapping Developmental Models",
-      "Week 6: Working from Being — Integration and Practice",
-    ],
-    placeholderLessons: true,
-  }),
+  TEAM_COACH_FIXTURE_COURSE,
+  EMPLOYEE_EXPERIENCE_FIXTURE_COURSE,
+  WHOLENESS_FIXTURE_COURSE,
   createPreviewFixtureCourse({
     id: `${FIXTURE_ID_PREFIX}idg-coach`,
     slug: "idg-coach-certification",

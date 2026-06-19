@@ -10,10 +10,7 @@ export function buildPlaceholderLessonTitle(moduleTitle) {
   return `${moduleTitle} — ${PLACEHOLDER_LESSON_TITLE_MARKER}`;
 }
 
-/** Course slugs that receive placeholder lessons (everything except HPCC). */
+/** Course slugs that receive placeholder lessons when no curriculum is seeded yet. */
 export const PLACEHOLDER_COURSE_SLUGS = [
-  "human-potential-team-coach-certification",
-  "breakthroughs-employee-experience",
-  "from-fragmentation-to-wholeness",
   "idg-coach-certification",
 ];

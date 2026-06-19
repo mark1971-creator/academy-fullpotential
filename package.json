@@ -2,18 +2,23 @@
   "name": "academy-fullpotential",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "start:prod": "next start -p ${PORT:-3000}",
     "lint": "eslint",
-    "seed": "node supabase/seed_course_meta.mjs && node supabase/seed_lessons.mjs && node supabase/seed_hpcc_assignments.mjs && node supabase/seed_placeholder_lessons.mjs",
+    "deploy:vps": "bash scripts/vps-deploy.sh",
+    "seed": "node supabase/seed_course_meta.mjs && node supabase/seed_lessons.mjs --all && node supabase/seed_assignments.mjs --all && node supabase/seed_placeholder_lessons.mjs",
     "seed:legacy-enrollments": "node supabase/seed_legacy_enrollments.mjs",
-    "seed:hpcc-assignments": "node supabase/seed_hpcc_assignments.mjs",
+    "seed:hpcc-assignments": "node supabase/seed_assignments.mjs --slug human-potential-coach-certification",
+    "seed:curriculum": "node supabase/seed_lessons.mjs --all && node supabase/seed_assignments.mjs --all",
     "db:apply-assignment-migration": "node scripts/apply-assignment-migration.mjs",
     "optimize:course-images": "node scripts/optimize-course-images.mjs",
-    "generate:course-images": "node scripts/generate-course-thumbnails.mjs",
-    "prepare:local": "vercel env pull .env.preview.pull --environment=preview --yes && vercel env pull .env.production.pull --environment=production --yes && node scripts/prepare-local-env.mjs"
+    "generate:course-images": "node scripts/generate-course-thumbnails.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

@@ -44,14 +44,19 @@ export function getStripeWebhookSecret() {
   return required("STRIPE_WEBHOOK_SECRET");
 }
 
-/** Canonical app URL for Stripe redirects and webhooks. */
+/** Canonical app URL for Stripe redirects and absolute links. */
 export function getAppBaseUrl() {
-  if (process.env.NEXT_PUBLIC_APP_URL) {
-    return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
+  const configured = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "");
+  if (configured) {
+    return configured;
   }
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "NEXT_PUBLIC_APP_URL is required in production (e.g. https://academy.yourdomain.com)",
+    );
   }
+
   return "http://localhost:3000";
 }
 

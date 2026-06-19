@@ -210,11 +210,6 @@ function LessonContent({
             {duration && (
               <p className="mt-3 text-sm text-brand-warm">Duration: {duration}</p>
             )}
-            {lesson.content && (
-              <p className="mt-5 max-w-3xl text-base leading-relaxed text-brand-warm">
-                {lesson.content}
-              </p>
-            )}
           </div>
 
           {isEnrolled && (
@@ -243,14 +238,23 @@ function LessonContent({
 
       <div>
         {isVideo ? (
-          <YouTubePlayer
-            url={lesson.youtubeUrl}
-            title={lesson.title}
-            className="rounded-none"
-          />
+          <>
+            {lesson.content && (
+              <div className="border-b border-border px-6 py-7 sm:px-8 sm:py-8">
+                <p className="max-w-3xl whitespace-pre-line text-base leading-relaxed text-brand-warm">
+                  {lesson.content}
+                </p>
+              </div>
+            )}
+            <YouTubePlayer
+              url={lesson.youtubeUrl}
+              title={lesson.title}
+              className="rounded-none"
+            />
+          </>
         ) : (
           <div className="flex items-start gap-5 px-6 py-8 sm:px-8 sm:py-10">
-            <p className="text-base leading-relaxed text-brand-warm">
+            <p className="whitespace-pre-line text-base leading-relaxed text-brand-warm">
               {lesson.content ??
                 "This resource is provided as part of your certification."}
             </p>

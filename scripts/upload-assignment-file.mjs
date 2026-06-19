@@ -1,8 +1,8 @@
-// Attach a PDF or Word file to an HPCC module assignment in Supabase Storage.
+// Attach a PDF or Word file to a module assignment in Supabase Storage.
 //
 // Usage:
-//   node scripts/upload-assignment-file.mjs --module 1 --file ./worksheet.pdf
-//   node scripts/upload-assignment-file.mjs --module 3 --file ./iceberg.docx --title "Iceberg worksheet"
+//   node scripts/upload-assignment-file.mjs --course human-potential-coach-certification --module 1 --file ./worksheet.pdf
+//   node scripts/upload-assignment-file.mjs --course breakthroughs-employee-experience --module 3 --file ./iceberg.docx --title "Worksheet"
 //
 // Requires: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY in .env.local
 // Run migration 20250618000000_assignment_resources.sql first.
@@ -13,7 +13,7 @@ import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 import { createClient } from "@supabase/supabase-js";
 
-const COURSE_SLUG = "human-potential-coach-certification";
+const DEFAULT_COURSE_SLUG = "human-potential-coach-certification";
 const BUCKET = "assignments";
 
 function loadEnv() {
@@ -28,11 +28,14 @@ function loadEnv() {
 }
 
 function parseArgs(argv) {
-  const args = { module: null, file: null, title: null, primary: false };
+  const args = { course: DEFAULT_COURSE_SLUG, module: null, file: null, title: null, primary: false };
   for (let i = 2; i < argv.length; i += 1) {
     const key = argv[i];
     const value = argv[i + 1];
-    if (key === "--module" && value) {
+    if (key === "--course" && value) {
+      args.course = value;
+      i += 1;
+    } else if (key === "--module" && value) {
       args.module = Number.parseInt(value, 10);
       i += 1;
     } else if (key === "--file" && value) {
@@ -57,10 +60,10 @@ function fileTypeFromPath(filePath) {
 }
 
 async function main() {
-  const { module: moduleOrder, file, title, primary } = parseArgs(process.argv);
+  const { course: courseSlug, module: moduleOrder, file, title, primary } = parseArgs(process.argv);
   if (!moduleOrder || !file) {
     console.error(
-      "Usage: node scripts/upload-assignment-file.mjs --module <1-11> --file <path> [--title \"Label\"] [--primary]",
+      "Usage: node scripts/upload-assignment-file.mjs --course <slug> --module <n> --file <path> [--title \"Label\"] [--primary]",
     );
     process.exit(1);
   }
@@ -80,16 +83,16 @@ async function main() {
   const fileType = fileTypeFromPath(file);
   const fileName = basename(file);
   const displayTitle = title ?? fileName;
-  const storagePath = `${COURSE_SLUG}/module-${moduleOrder}/${Date.now()}-${fileName}`;
+  const storagePath = `${courseSlug}/module-${moduleOrder}/${Date.now()}-${fileName}`;
   const fileBuffer = readFileSync(file);
 
   const { data: course, error: courseError } = await db
     .from("courses")
     .select("id")
-    .eq("slug", COURSE_SLUG)
+    .eq("slug", courseSlug)
     .maybeSingle();
   if (courseError) throw courseError;
-  if (!course) throw new Error(`Course not found: ${COURSE_SLUG}`);
+  if (!course) throw new Error(`Course not found: ${courseSlug}`);
 
   const { data: module, error: moduleError } = await db
     .from("modules")
@@ -109,7 +112,7 @@ async function main() {
   if (assignmentError) throw assignmentError;
   if (!assignment) {
     throw new Error(
-      `No module assignment found for module ${moduleOrder}. Run: node supabase/seed_hpcc_assignments.mjs`,
+      `No module assignment found for module ${moduleOrder}. Run: node supabase/seed_assignments.mjs --slug ${courseSlug}`,
     );
   }
 

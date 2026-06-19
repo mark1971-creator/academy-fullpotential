@@ -53,7 +53,9 @@ export default async function CourseLearnPage({
 
   return (
     <>
-      {usingFallbackData && <FallbackDataBanner />}
+      {process.env.NODE_ENV === "development" && usingFallbackData && (
+        <FallbackDataBanner />
+      )}
       <CourseLearnLayout
         course={course}
         progress={progress}

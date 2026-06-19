@@ -63,7 +63,9 @@ export default async function CoursePreviewPage({
 
   return (
     <PageShell className="max-w-[1400px]">
-      {usingFallbackData && <FallbackDataBanner />}
+      {process.env.NODE_ENV === "development" && usingFallbackData && (
+        <FallbackDataBanner />
+      )}
 
       <EnrollStatusBanner payment={payment} enrollError={enrollError} />
 

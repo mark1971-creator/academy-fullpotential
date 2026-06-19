@@ -1,6 +1,6 @@
-// Merges Vercel preview + production env pulls into .env.local for local development.
-//
-// Run via:  npm run prepare:local
+// Optional: merges pulled env files into .env.local for local development.
+// Legacy Vercel workflow: vercel env pull .env.preview.pull && node scripts/prepare-local-env.mjs
+// Preferred: copy .env.example to .env.local and fill in values.
 
 import { readFileSync, writeFileSync, existsSync, unlinkSync } from "node:fs";
 import { join, dirname } from "node:path";
