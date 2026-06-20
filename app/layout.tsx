@@ -5,6 +5,7 @@ import { Cormorant_Garamond, Lato } from "next/font/google";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { CLERK_PROVIDER_PROPS } from "@/lib/clerk/routes";
+import { rootSiteMetadata } from "@/lib/site-metadata";
 
 import "./globals.css";
 
@@ -20,14 +21,7 @@ const cormorant = Cormorant_Garamond({
   weight: ["300", "400", "500", "600"],
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: "Human Potential Academy | BEING at Full Potential",
-    template: "%s | BEING at Full Potential",
-  },
-  description:
-    "A place to learn and grow into your full potential — certifications, trainings, and transformational programs from Being at Full Potential.",
-};
+export const metadata: Metadata = rootSiteMetadata;
 
 export const viewport: Viewport = {
   width: "device-width",

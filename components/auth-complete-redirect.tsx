@@ -29,6 +29,12 @@ export function AuthCompleteRedirect({
     hasRedirected.current = true;
 
     const navigate = async () => {
+      try {
+        await fetch("/api/auth/sync", { method: "POST", credentials: "same-origin" });
+      } catch {
+        // Non-fatal — /my-courses also runs sync on load.
+      }
+
       router.refresh();
       await new Promise((resolve) => setTimeout(resolve, 150));
       router.replace(target);

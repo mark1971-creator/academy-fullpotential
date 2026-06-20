@@ -6,7 +6,7 @@
 // Users without a Clerk account get a placeholder profile (legacy:<email>).
 // When they sign up, syncCurrentUserProfile() migrates enrollments to their Clerk id.
 
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { createClient } from "@supabase/supabase-js";
@@ -20,13 +20,18 @@ const LEGACY_ENROLLED_AT = "2024-06-01T00:00:00.000Z";
 
 function loadEnv() {
   const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-  const raw = readFileSync(join(root, ".env.local"), "utf8");
-  const env = {};
-  for (const line of raw.split(/\r?\n/)) {
-    const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/i);
-    if (m) env[m[1]] = m[2];
+  for (const name of [".env.local", ".env"]) {
+    const path = join(root, name);
+    if (!existsSync(path)) continue;
+    const raw = readFileSync(path, "utf8");
+    const env = {};
+    for (const line of raw.split(/\r?\n/)) {
+      const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/i);
+      if (m) env[m[1]] = m[2];
+    }
+    return env;
   }
-  return env;
+  throw new Error("Missing .env.local or .env");
 }
 
 function normalizeEmail(email) {

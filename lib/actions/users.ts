@@ -17,7 +17,16 @@ import type { Profile } from "@/types/lms";
 export async function syncCurrentUserProfile(): Promise<Profile | null> {
   try {
     const { userId } = await auth();
-    if (!userId || !hasSupabaseAdminConfig()) {
+    if (!userId) {
+      return null;
+    }
+
+    if (!hasSupabaseAdminConfig()) {
+      if (process.env.NODE_ENV === "production") {
+        console.error(
+          "[syncCurrentUserProfile] SUPABASE_SERVICE_ROLE_KEY is missing — legacy enrollments cannot be claimed.",
+        );
+      }
       return null;
     }
 

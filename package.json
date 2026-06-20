@@ -18,7 +18,8 @@
     "seed:curriculum": "node supabase/seed_lessons.mjs --all && node supabase/seed_assignments.mjs --all",
     "db:apply-assignment-migration": "node scripts/apply-assignment-migration.mjs",
     "optimize:course-images": "node scripts/optimize-course-images.mjs",
-    "generate:course-images": "node scripts/generate-course-thumbnails.mjs"
+    "generate:course-images": "node scripts/generate-course-thumbnails.mjs",
+    "generate:og-image": "node scripts/generate-og-image.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

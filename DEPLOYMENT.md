@@ -136,7 +136,30 @@ Clerk middleware protects `/my-courses` and `/dashboard`; no extra VPS config ne
 
 Test webhook delivery from the Stripe Dashboard after deploy.
 
-## 8. Supabase
+## 8. Legacy HPCC enrollments (previous academy site)
+
+41 paid HPCC students were pre-enrolled in Supabase under placeholder profiles (`legacy:email@...`).
+When a user **signs up** with Clerk using the **same email**, their HPCC access is claimed automatically.
+
+```bash
+# Run once (idempotent) — locally or on the VPS with .env / .env.local configured
+npm run seed:legacy-enrollments
+
+# Verify placeholder + claimed counts
+node scripts/check-legacy-enrollments.mjs
+```
+
+**Critical:** `SUPABASE_SERVICE_ROLE_KEY` must be set on the VPS `.env` file. Without it, legacy enrollments cannot be linked after sign-up.
+
+**Returning students** must use **Sign up** (not Sign in) if they do not yet have a Clerk account on this site. They cannot use their old WordPress/LearnDash password — Clerk manages authentication on the new academy.
+
+After deploy, ask a returning student to:
+
+1. Go to `/sign-up` with their original enrollment email
+2. Complete account creation
+3. Open `/my-courses` — HPCC should appear
+
+## 9. Supabase
 
 1. Use the same project URL and keys as development (or a dedicated production project).
 2. Run migrations in the Supabase SQL editor if not already applied (`supabase/migrations/`).

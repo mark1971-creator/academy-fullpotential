@@ -29,6 +29,14 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
           <div className="mb-8 text-center">
             <p className="text-xs uppercase tracking-[0.28em] text-brand-gold">Welcome back</p>
             <h1 className="mt-3 font-heading text-3xl font-light">Sign in to the Academy</h1>
+            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+              Returning HPCC student from the previous academy site? If you have not created an
+              account here yet, use{" "}
+              <a href={signUpHref} className="font-medium text-brand-blue underline-offset-4 hover:underline">
+                Sign up
+              </a>{" "}
+              with the same email you used when you enrolled.
+            </p>
           </div>
           <SignIn
             routing="path"
