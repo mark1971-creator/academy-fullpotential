@@ -115,8 +115,10 @@ async function main() {
     }
     seenEmails.add(email);
 
+    // Always use legacy:<email> placeholders so enrollments are claimed on sign-up,
+    // even if a Clerk account already exists (avoids duplicate-account issues).
     const clerkUserId = await findClerkUserIdByEmail(email, clerkSecret);
-    const profileId = clerkUserId ?? legacyProfileId(email);
+    const profileId = legacyProfileId(email);
     const { first_name, last_name } = parseFullName(enrollee.full_name);
 
     if (clerkUserId) {

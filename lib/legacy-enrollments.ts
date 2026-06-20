@@ -34,9 +34,99 @@ export function parseFullName(fullName: string): {
 
 type AdminClient = SupabaseClient<Database>;
 
+const PROGRESS_TABLES = [
+  "lesson_progress",
+  "assignment_progress",
+  "quiz_progress",
+] as const;
+
 /**
- * Moves enrollments (and any progress rows) from legacy placeholder profile(s)
- * to the signed-in Clerk user when an email address matches.
+ * Moves enrollments and progress from one profile to another.
+ * Used for legacy claim and duplicate Clerk account reconciliation.
+ */
+async function migrateUserData(
+  supabase: AdminClient,
+  fromUserId: string,
+  toUserId: string,
+): Promise<void> {
+  if (fromUserId === toUserId) return;
+
+  const { data: sourceEnrollments, error: enrollmentsError } = await supabase
+    .from("enrollments")
+    .select("id, course_id")
+    .eq("user_id", fromUserId);
+
+  if (enrollmentsError) {
+    console.error("migrateUserData enrollments lookup:", enrollmentsError.message);
+    return;
+  }
+
+  for (const enrollment of sourceEnrollments ?? []) {
+    const { data: existingEnrollment } = await supabase
+      .from("enrollments")
+      .select("id")
+      .eq("user_id", toUserId)
+      .eq("course_id", enrollment.course_id)
+      .maybeSingle();
+
+    if (existingEnrollment) {
+      await supabase.from("enrollments").delete().eq("id", enrollment.id);
+      continue;
+    }
+
+    const { error } = await supabase
+      .from("enrollments")
+      .update({ user_id: toUserId })
+      .eq("id", enrollment.id);
+
+    if (error) {
+      console.error("migrateUserData enrollments:", error.message);
+    }
+  }
+
+  for (const table of PROGRESS_TABLES) {
+    const { error } = await supabase
+      .from(table)
+      .update({ user_id: toUserId })
+      .eq("user_id", fromUserId);
+
+    if (error) {
+      console.error(`migrateUserData ${table}:`, error.message);
+    }
+  }
+}
+
+async function deleteLegacyProfileIfEmpty(
+  supabase: AdminClient,
+  profileId: string,
+): Promise<void> {
+  if (!isLegacyProfileId(profileId)) return;
+
+  const { count, error: countError } = await supabase
+    .from("enrollments")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", profileId);
+
+  if (countError) {
+    console.error("deleteLegacyProfileIfEmpty count:", countError.message);
+    return;
+  }
+
+  if (count && count > 0) return;
+
+  const { error: deleteError } = await supabase
+    .from("profiles")
+    .delete()
+    .eq("id", profileId);
+
+  if (deleteError) {
+    console.error("deleteLegacyProfileIfEmpty delete:", deleteError.message);
+  }
+}
+
+/**
+ * Moves enrollments from legacy placeholder and other profiles sharing the same
+ * email to the signed-in Clerk user (handles re-sign-up / duplicate accounts).
  */
 export async function claimLegacyEnrollmentsForUser(
   supabase: AdminClient,
@@ -52,90 +142,47 @@ export async function claimLegacyEnrollmentsForUser(
   ];
 
   for (const email of normalizedEmails) {
-    await claimLegacyEnrollmentsForEmail(supabase, userId, email);
+    await claimEnrollmentsForEmail(supabase, userId, email);
   }
 }
 
-async function claimLegacyEnrollmentsForEmail(
+async function claimEnrollmentsForEmail(
   supabase: AdminClient,
   userId: string,
   email: string,
 ): Promise<void> {
   const legacyId = legacyProfileId(email);
-  if (legacyId === userId) return;
+  const sourceProfileIds = new Set<string>();
 
-  const { data: legacyProfile, error: lookupError } = await supabase
+  const { data: legacyProfile, error: legacyLookupError } = await supabase
     .from("profiles")
     .select("id")
     .eq("id", legacyId)
     .maybeSingle();
 
-  if (lookupError) {
-    console.error("claimLegacyEnrollmentsForUser lookup:", lookupError.message);
-    return;
+  if (legacyLookupError) {
+    console.error("claimEnrollmentsForEmail legacy lookup:", legacyLookupError.message);
+  } else if (legacyProfile) {
+    sourceProfileIds.add(legacyId);
   }
 
-  if (!legacyProfile) return;
-
-  const { data: legacyEnrollments, error: legacyEnrollmentsError } = await supabase
-    .from("enrollments")
-    .select("id, course_id")
-    .eq("user_id", legacyId);
-
-  if (legacyEnrollmentsError) {
-    console.error(
-      "claimLegacyEnrollmentsForUser enrollments lookup:",
-      legacyEnrollmentsError.message,
-    );
-    return;
-  }
-
-  for (const enrollment of legacyEnrollments ?? []) {
-    const { data: existingEnrollment } = await supabase
-      .from("enrollments")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("course_id", enrollment.course_id)
-      .maybeSingle();
-
-    if (existingEnrollment) {
-      await supabase.from("enrollments").delete().eq("id", enrollment.id);
-      continue;
-    }
-
-    const { error } = await supabase
-      .from("enrollments")
-      .update({ user_id: userId })
-      .eq("id", enrollment.id);
-
-    if (error) {
-      console.error("claimLegacyEnrollmentsForUser enrollments:", error.message);
-    }
-  }
-
-  const progressTables = [
-    "lesson_progress",
-    "assignment_progress",
-    "quiz_progress",
-  ] as const;
-
-  for (const table of progressTables) {
-    const { error } = await supabase
-      .from(table)
-      .update({ user_id: userId })
-      .eq("user_id", legacyId);
-
-    if (error) {
-      console.error(`claimLegacyEnrollmentsForUser ${table}:`, error.message);
-    }
-  }
-
-  const { error: deleteError } = await supabase
+  const { data: emailProfiles, error: emailLookupError } = await supabase
     .from("profiles")
-    .delete()
-    .eq("id", legacyId);
+    .select("id")
+    .ilike("email", email);
 
-  if (deleteError) {
-    console.error("claimLegacyEnrollmentsForUser delete:", deleteError.message);
+  if (emailLookupError) {
+    console.error("claimEnrollmentsForEmail email lookup:", emailLookupError.message);
+  } else {
+    for (const profile of emailProfiles ?? []) {
+      if (profile.id !== userId) {
+        sourceProfileIds.add(profile.id);
+      }
+    }
+  }
+
+  for (const sourceProfileId of sourceProfileIds) {
+    await migrateUserData(supabase, sourceProfileId, userId);
+    await deleteLegacyProfileIfEmpty(supabase, sourceProfileId);
   }
 }
