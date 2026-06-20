@@ -2,6 +2,8 @@
 
 Next.js 16 LMS for course previews, enrollment (Clerk + Stripe), and the protected learn experience (Supabase).
 
+**Platform documentation:** [docs/README.md](./docs/README.md) — architecture, curriculum management, and operations.
+
 ## Local development
 
 ```bash
