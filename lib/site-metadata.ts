@@ -8,7 +8,8 @@ export const DEFAULT_SITE_DESCRIPTION =
   "A place to learn and grow into your full potential — certifications, trainings, and transformational programs from Being at Full Potential.";
 
 /** 1200×630 social share image derived from the HPCC course banner. */
-export const OG_IMAGE_PATH = "/Images/og/academy-hpcc-og.jpg";
+export const OG_IMAGE_VERSION = "3";
+export const OG_IMAGE_PATH = `/Images/og/academy-hpcc-og.jpg?v=${OG_IMAGE_VERSION}`;
 
 export const OG_IMAGE_ALT =
   "Certification – Human Potential Development Coach Training — Human Potential Academy";
