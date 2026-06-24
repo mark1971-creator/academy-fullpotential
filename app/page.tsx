@@ -7,14 +7,21 @@ import { GraduatesTestimonials } from "@/components/testimonials/graduates-testi
 import { Button } from "@/components/ui/button";
 import { getCourseBySlug } from "@/lib/actions/courses";
 import { HPCC_TESTIMONIALS } from "@/lib/courses/hpcc-testimonials";
+import { getOrganizationJsonLd } from "@/lib/structured-data";
 
 export default async function HomePage() {
   const hpccCourse = await getCourseBySlug("human-potential-coach-certification");
   const graduateTestimonials =
     hpccCourse?.testimonials.length ? hpccCourse.testimonials : HPCC_TESTIMONIALS;
 
+  const orgJsonLd = getOrganizationJsonLd();
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
+      />
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-brand-navy-dark via-brand-navy-mid to-brand-navy" />
         <div className="absolute inset-0 bg-brand-navy-dark/20 pointer-events-none" />

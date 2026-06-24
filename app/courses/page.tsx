@@ -10,7 +10,10 @@ import { PageShell } from "@/components/ui/brand-elements";
 export const metadata = {
   title: "Programs",
   description:
-    "Browse certification and training programs from Being at Full Potential.",
+    "Browse certification and training programs from Being at Full Potential. Explore courses in human potential coaching, leadership, and organizational transformation.",
+  alternates: {
+    canonical: "https://academy.beingatfullpotential.com/courses",
+  },
 };
 
 export default async function CoursesPage() {

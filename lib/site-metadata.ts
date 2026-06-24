@@ -50,6 +50,20 @@ export const rootSiteMetadata: Metadata = {
     template: `%s | ${SITE_NAME}`,
   },
   description: DEFAULT_SITE_DESCRIPTION,
+  keywords: [
+    "human potential",
+    "coaching certification",
+    "BEING at Full Potential",
+    "leadership development",
+    "coach training",
+    "IDG",
+    "inner development goals",
+    "organizational transformation",
+    "human potential coach",
+  ],
+  alternates: {
+    canonical: "https://academy.beingatfullpotential.com",
+  },
   openGraph: defaultOpenGraph,
   twitter: defaultTwitter,
 };
