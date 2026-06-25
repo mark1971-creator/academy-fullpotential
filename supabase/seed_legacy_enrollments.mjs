@@ -1,7 +1,7 @@
-// Grants HPCC enrollments to users who paid on the previous academy site.
+// Grants legacy / complimentary enrollments (HPCC, Employee Experience, etc.).
 // Idempotent — safe to re-run.
 //
-// Run from the project root:   node supabase/seed_legacy_enrollments.mjs
+// Run from the project root:   npm run seed:legacy-enrollments
 //
 // Users without a Clerk account get a placeholder profile (legacy:<email>).
 // When they sign up, syncCurrentUserProfile() migrates enrollments to their Clerk id.
@@ -11,12 +11,9 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { createClient } from "@supabase/supabase-js";
 
-import { HPCC_LEGACY_ENROLLEES } from "./seed-data/hpcc-legacy-enrollees.mjs";
+import { LEGACY_ENROLLMENT_BATCHES } from "./seed-data/legacy-enrollment-batches.mjs";
 
-const COURSE_SLUG = "human-potential-coach-certification";
 const LEGACY_PROFILE_PREFIX = "legacy:";
-/** Approximate enrollment date on the previous site. */
-const LEGACY_ENROLLED_AT = "2024-06-01T00:00:00.000Z";
 
 function loadEnv() {
   const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -71,28 +68,15 @@ async function findClerkUserIdByEmail(email, secretKey) {
   return users?.[0]?.id ?? null;
 }
 
-async function main() {
-  const env = loadEnv();
-  const url = env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
-  const clerkSecret = env.CLERK_SECRET_KEY;
-
-  if (!url || !serviceKey) {
-    throw new Error(
-      "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.local",
-    );
-  }
-
-  const db = createClient(url, serviceKey);
-
+async function seedBatch(db, batch, clerkSecret) {
   const { data: course, error: courseError } = await db
     .from("courses")
     .select("id, slug, title")
-    .eq("slug", COURSE_SLUG)
+    .eq("slug", batch.courseSlug)
     .maybeSingle();
 
   if (courseError || !course) {
-    throw new Error(`Course not found: ${COURSE_SLUG}`);
+    throw new Error(`Course not found: ${batch.courseSlug}`);
   }
 
   const seenEmails = new Set();
@@ -106,7 +90,7 @@ async function main() {
     skippedDuplicate: 0,
   };
 
-  for (const enrollee of HPCC_LEGACY_ENROLLEES) {
+  for (const enrollee of batch.enrollees) {
     const email = normalizeEmail(enrollee.email);
     if (seenEmails.has(email)) {
       summary.skippedDuplicate += 1;
@@ -115,8 +99,6 @@ async function main() {
     }
     seenEmails.add(email);
 
-    // Always use legacy:<email> placeholders so enrollments are claimed on sign-up,
-    // even if a Clerk account already exists (avoids duplicate-account issues).
     const clerkUserId = await findClerkUserIdByEmail(email, clerkSecret);
     const profileId = legacyProfileId(email);
     const { first_name, last_name } = parseFullName(enrollee.full_name);
@@ -167,14 +149,14 @@ async function main() {
       user_id: profileId,
       course_id: course.id,
       progress_percent: 0,
-      enrolled_at: LEGACY_ENROLLED_AT,
+      enrolled_at: batch.enrolledAt,
     });
 
     if (enrollmentError) throw enrollmentError;
     summary.enrollmentsCreated += 1;
   }
 
-  console.log(`\nLegacy HPCC enrollments for: ${course.title}`);
+  console.log(`\nLegacy enrollments for: ${course.title}`);
   console.log(`  Unique emails processed: ${seenEmails.size}`);
   console.log(`  Profiles created:        ${summary.profilesCreated}`);
   console.log(`  Profiles updated:        ${summary.profilesUpdated}`);
@@ -185,6 +167,26 @@ async function main() {
   if (summary.skippedDuplicate > 0) {
     console.log(`  Skipped duplicate rows:  ${summary.skippedDuplicate}`);
   }
+}
+
+async function main() {
+  const env = loadEnv();
+  const url = env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
+  const clerkSecret = env.CLERK_SECRET_KEY;
+
+  if (!url || !serviceKey) {
+    throw new Error(
+      "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.local",
+    );
+  }
+
+  const db = createClient(url, serviceKey);
+
+  for (const batch of LEGACY_ENROLLMENT_BATCHES) {
+    await seedBatch(db, batch, clerkSecret);
+  }
+
   console.log("\nDone.");
 }
 
